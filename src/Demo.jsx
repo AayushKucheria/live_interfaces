@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 import { PenTool, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const purposes = {
   planning: {
@@ -425,12 +426,18 @@ const CreatorCard = ({
   );
 };
 
-const CreatorSidebar = ({ selected, onSelect, selectedAesthetics, onAestheticToggle }) => (
+const CreatorSidebar = ({ 
+  selected, 
+  onSelect, 
+  selectedAesthetics, 
+  onAestheticToggle,
+  navigate 
+}) => (
   <div className="w-80 h-[calc(100vh-2rem)] overflow-y-auto space-y-6 p-4">
     <div className="flex items-center justify-between mb-4">
       <h2 className="text-lg font-medium text-slate-700">Choose Style</h2>
       <button 
-        onClick={() => alert('Become a creator feature coming soon!')}
+        onClick={() => navigate('/become-creator')}
         className="px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-full 
                  hover:bg-emerald-100 transition-colors"
       >
@@ -457,6 +464,7 @@ const Demo = () => {
   const [selectedPurpose, setSelectedPurpose] = useState('capture'); // Default purpose
   const [selectedCreator, setSelectedCreator] = useState('luna');    // Default creator
   const [selectedAesthetics, setSelectedAesthetics] = useState(new Set());
+  const navigate = useNavigate();
 
   const handleAestheticToggle = (aestheticId) => {
     setSelectedAesthetics(prev => {
@@ -500,6 +508,7 @@ const Demo = () => {
             onSelect={setSelectedCreator}
             selectedAesthetics={selectedAesthetics}
             onAestheticToggle={handleAestheticToggle}
+            navigate={navigate}
           />
         </div>
       </div>
