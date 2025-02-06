@@ -12,7 +12,7 @@ const purposes = {
   },
   capture: {
     title: "Quick Capture",
-    description: "Let thoughts flow freely as they come"
+    description: "Let thonughts flow freely as they come"
   },
   reflection: {
     title: "Reflection", 
@@ -135,8 +135,16 @@ const NoteInterface = ({ creatorId, purpose }) => {
   const [entries, setEntries] = useState([]);
   const [currentInput, setCurrentInput] = useState('');
   const [encouragement, setEncouragement] = useState('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const creator = creators[creatorId];
   
+  // Add effect to show transition when creator changes
+  useEffect(() => {
+    setIsTransitioning(true);
+    const timer = setTimeout(() => setIsTransitioning(false), 300);
+    return () => clearTimeout(timer);
+  }, [creatorId]);
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && currentInput.trim()) {
       let newEntry = {
@@ -207,7 +215,13 @@ const NoteInterface = ({ creatorId, purpose }) => {
   };
 
   return (
-    <div className={creator.style.container}>
+    <div 
+      className={`${creator.style.container} transition-all duration-300`}
+      style={{
+        opacity: isTransitioning ? 0.5 : 1,
+        transform: isTransitioning ? 'scale(0.98)' : 'scale(1)'
+      }}
+    >
       <input
         type="text"
         value={currentInput}
@@ -256,6 +270,7 @@ const PurposeSelector = ({ selected, onSelect }) => (
 );
 
 const CreatorCard = ({ creator, id, selected, onSelect }) => {
+  const [isSubscribed, setIsSubscribed] = useState(false);
   // Custom styles for each creator
   const cardStyles = {
     jun: {
@@ -283,6 +298,11 @@ const CreatorCard = ({ creator, id, selected, onSelect }) => {
 
   const style = cardStyles[id];
 
+  const handleSubscribe = (e) => {
+    e.stopPropagation(); // Prevent card selection when clicking heart
+    setIsSubscribed(!isSubscribed);
+  };
+
   return (
     <div className="relative group">
       <button
@@ -296,8 +316,18 @@ const CreatorCard = ({ creator, id, selected, onSelect }) => {
           }
         `}
       >
-        <div className="font-medium mb-4">{creator.vibe}</div>
-        <div className="text-sm text-slate-600">by {creator.name}</div>
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="font-medium mb-4">{creator.vibe}</div>
+            <div className="text-sm text-slate-600">by {creator.name}</div>
+          </div>
+          <button 
+            onClick={handleSubscribe}
+            className="p-2 hover:bg-white/50 rounded-full transition-colors"
+          >
+            {isSubscribed ? '❤️' : '🤍'}
+          </button>
+        </div>
         
         <button className="absolute bottom-3 right-3 text-xs px-2 py-1 bg-white/80 backdrop-blur-sm 
           text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
@@ -324,7 +354,16 @@ const CreatorCard = ({ creator, id, selected, onSelect }) => {
 
 const CreatorSidebar = ({ selected, onSelect }) => (
   <div className="w-80 h-[calc(100vh-2rem)] overflow-y-auto space-y-6 p-4">
-    <h2 className="text-lg font-medium text-slate-700">Choose Style</h2>
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-lg font-medium text-slate-700">Choose Style</h2>
+      <button 
+        onClick={() => alert('Become a creator feature coming soon!')}
+        className="px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-full 
+                 hover:bg-emerald-100 transition-colors"
+      >
+        Become a Creator
+      </button>
+    </div>
     <div className="space-y-6">
       {Object.entries(creators).map(([id, creator]) => (
         <CreatorCard
