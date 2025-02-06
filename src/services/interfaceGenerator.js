@@ -5,20 +5,91 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
-export async function processCreatorInput(creatorData) {
-  // First, analyze the creator's responses to understand their vision
-  const analysis = await analyzeCreatorVision(creatorData);
-  
-  // If there's a sketch, analyze it
-  let sketchAnalysis = '';
-  if (creatorData.responses.sketch) {
-    sketchAnalysis = await analyzeSketch(creatorData.responses.sketch);
+// Define the exact structure we want from GPT
+const STYLE_PRESETS = {
+  minimal: {
+    container: "space-y-4 p-8 bg-gray-50",
+    input: "w-full p-4 bg-transparent border-none focus:outline-none",
+    entry: "flex items-start space-x-4 py-3",
+    bullet: "•",
+  },
+  playful: {
+    container: "space-y-4 p-6 bg-gradient-to-br from-purple-50 to-blue-50",
+    input: "w-full p-4 rounded-xl bg-white/70 border-2",
+    entry: "flex items-start space-x-3 py-2",
+    bullet: "✨",
+  },
+  structured: {
+    container: "space-y-2 p-6 bg-slate-50",
+    input: "w-full p-3 bg-white border-b-2 border-slate-200",
+    entry: "flex items-start space-x-3 py-2",
+    bullet: "→",
   }
+};
+
+export async function processCreatorInput(creatorData) {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4",
+    messages: [
+      {
+        role: "user",
+        content: `Based on this creator's input:
+          ${creatorData.inspiration}
+          ${creatorData.vibe}
+          
+          Generate a simple interface configuration.`
+      }
+    ],
+    functions: [
+      {
+        name: "generateInterface",
+        description: "Generate interface configuration based on creator input",
+        parameters: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "Creator's name" },
+            baseStyle: { 
+              type: "string", 
+              enum: ["minimal", "playful", "structured"],
+              description: "Base style preset to use"
+            },
+            customizations: {
+              type: "object",
+              properties: {
+                bullet: { 
+                  type: "string", 
+                  description: "Single character to use as bullet point" 
+                },
+                primaryColor: {
+                  type: "string",
+                  enum: ["slate", "purple", "emerald", "blue"],
+                  description: "Primary color theme"
+                }
+              },
+              required: ["bullet", "primaryColor"]
+            }
+          },
+          required: ["name", "baseStyle", "customizations"]
+        }
+      }
+    ],
+    function_call: { name: "generateInterface" }
+  });
+
+  const result = JSON.parse(response.choices[0].message.function_call.arguments);
   
-  // Then, generate interface configuration based on both analyses
-  const interfaceConfig = await generateInterfaceConfig(analysis, sketchAnalysis);
-  
-  return interfaceConfig;
+  // Combine the preset with customizations
+  const config = {
+    name: result.name,
+    style: {
+      ...STYLE_PRESETS[result.baseStyle],
+      bullet: result.customizations.bullet
+    },
+    // Add any computed properties based on primaryColor
+    primaryColor: result.customizations.primaryColor
+  };
+
+  return config;
 }
 
 async function analyzeCreatorVision(creatorData) {
@@ -73,21 +144,43 @@ async function analyzeSketch(sketchDataUrl) {
   return response.choices[0].message.content;
 }
 
-async function generateInterfaceConfig(analysis, sketchAnalysis = '') {
-  const prompt = `Based on this analysis of a creator's vision:
+function validateTailwindClasses(classes) {
+  // Basic validation - could be expanded
+  const invalidChars = /[^a-zA-Z0-9-\s]/g;
+  const commonPrefixes = ['bg-', 'text-', 'p-', 'm-', 'border-', 'rounded-', 'shadow-', 'hover:', 'focus:'];
+  
+  const classArray = classes.split(' ');
+  return classArray.every(cls => {
+    if (invalidChars.test(cls)) return false;
+    return commonPrefixes.some(prefix => cls.startsWith(prefix));
+  });
+}
+
+async function generateInterfaceConfig(analysis, sketchAnalysis) {
+  const prompt = `Based on this analysis of the creator's vision and style:
     ${analysis}
+    ${sketchAnalysis ? `And their sketch analysis: ${sketchAnalysis}` : ''}
     
-    ${sketchAnalysis ? `And this analysis of their sketch/reference image:
-    ${sketchAnalysis}` : ''}
-    
-    Generate a complete interface configuration including:
-    1. Color scheme and visual style
-    2. Animation preferences
-    3. Layout structure (incorporating any specific layout from the sketch)
-    4. Interactive features
-    5. Feedback mechanisms
-    
-    Format the response as a valid JavaScript object matching our creator interface schema.`;
+    Generate a creator interface configuration in this exact JavaScript object format:
+    {
+      name: "Creator's name",
+      vibe: "One-line description of the interface vibe",
+      style: {
+        container: "Tailwind classes for container",
+        input: "Tailwind classes for input",
+        entry: "Tailwind classes for entries",
+        bullet: "Bullet character or symbol",
+        entryText: "Tailwind classes for entry text",
+        activeText: "Tailwind classes for active text",
+        fadeText: "Tailwind classes for faded text"
+      },
+      features: {
+        // 2-4 unique features that match their style
+        // e.g. fadeOldEntries: true,
+        // showOneAtATime: true,
+        // etc.
+      }
+    }`;
 
   const response = await openai.chat.completions.create({
     model: "gpt-4",
