@@ -131,7 +131,24 @@ const getRandomEncouragement = () => {
   return encouragements[Math.floor(Math.random() * encouragements.length)];
 };
 
-const NoteInterface = ({ creatorId, purpose }) => {
+const combineFeatures = (creators, selectedCreator, selectedAesthetics) => {
+  const features = { ...creators[selectedCreator].features }; // Start with base features
+  
+  // Loop through all creators to find matching aesthetic features
+  Object.values(creators).forEach(creator => {
+    creator.style.aesthetics?.forEach(aesthetic => {
+      if (selectedAesthetics.has(aesthetic.id)) {
+        aesthetic.features?.forEach(feature => {
+          features[feature] = true;
+        });
+      }
+    });
+  });
+  
+  return features;
+};
+
+const NoteInterface = ({ creatorId, purpose, selectedAesthetics }) => {
   const [entries, setEntries] = useState([]);
   const [currentInput, setCurrentInput] = useState('');
   const [encouragement, setEncouragement] = useState('');
@@ -145,16 +162,18 @@ const NoteInterface = ({ creatorId, purpose }) => {
     return () => clearTimeout(timer);
   }, [creatorId]);
 
+  const combinedFeatures = combineFeatures(creators, creatorId, selectedAesthetics);
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && currentInput.trim()) {
       let newEntry = {
         text: currentInput,
-        bullet: creator.features?.randomBullets 
+        bullet: combinedFeatures.randomBullets 
           ? creator.features.randomBullets[
               Math.floor(Math.random() * creator.features.randomBullets.length)
             ]
           : creator.style.bullet,
-        tags: creator.features?.autoTags 
+        tags: combinedFeatures.autoTags 
           ? extractTags(currentInput)
           : []
       };
@@ -269,29 +288,66 @@ const PurposeSelector = ({ selected, onSelect }) => (
   </div>
 );
 
-const CreatorCard = ({ creator, id, selected, onSelect }) => {
+const CreatorCard = ({ 
+  creator, 
+  id, 
+  selected, 
+  onSelect, 
+  selectedAesthetics, 
+  onAestheticToggle 
+}) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   // Custom styles for each creator
   const cardStyles = {
     jun: {
       background: `bg-slate-50 [background-image:linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9),linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9)] bg-[length:16px_16px] bg-[position:0_0,8px_8px]`,
       aesthetics: [
-        { id: 'minimal', label: 'Minimalist', color: 'bg-slate-200' },
-        { id: 'oneThought', label: 'One thought at a time', color: 'bg-slate-300' }
+        { 
+          id: 'minimal', 
+          label: 'Minimalist Interface',
+          color: 'bg-slate-100 text-slate-700',
+          features: ['fadeOldEntries', 'showOneAtTime']
+        },
+        { 
+          id: 'zen', 
+          label: 'Zen Transitions',
+          color: 'bg-slate-100 text-slate-700',
+          features: ['gentleAnimations']
+        }
       ]
     },
     luna: {
       background: 'bg-gradient-to-br from-yellow-50 to-orange-50',
       aesthetics: [
-        { id: 'encouraging', label: 'Encouraging', color: 'bg-yellow-200' },
-        { id: 'natural', label: 'Natural beauty', color: 'bg-orange-200' }
+        { 
+          id: 'encouraging', 
+          label: 'Encouragement System',
+          color: 'bg-yellow-100 text-yellow-800',
+          features: ['showEncouragement']
+        },
+        { 
+          id: 'playful', 
+          label: 'Playful Elements',
+          color: 'bg-orange-100 text-orange-800',
+          features: ['playfulAnimations', 'randomBullets']
+        }
       ]
     },
     marcus: {
       background: 'bg-blue-50 [background-image:linear-gradient(white_2px,transparent_2px),linear-gradient(90deg,white_2px,transparent_2px)] bg-[size:32px_32px]',
       aesthetics: [
-        { id: 'organized', label: 'Thought organization', color: 'bg-blue-200' },
-        { id: 'systematic', label: 'Systematic', color: 'bg-indigo-200' }
+        { 
+          id: 'organized', 
+          label: 'Smart Organization',
+          color: 'bg-blue-100 text-blue-800',
+          features: ['autoTags']
+        },
+        { 
+          id: 'systematic', 
+          label: 'Thought Connections',
+          color: 'bg-indigo-100 text-indigo-800',
+          features: ['showConnections', 'systemicLayout']
+        }
       ]
     }
   };
@@ -301,6 +357,11 @@ const CreatorCard = ({ creator, id, selected, onSelect }) => {
   const handleSubscribe = (e) => {
     e.stopPropagation(); // Prevent card selection when clicking heart
     setIsSubscribed(!isSubscribed);
+  };
+
+  const handleAestheticClick = (e, aestheticId) => {
+    e.stopPropagation();
+    onAestheticToggle(aestheticId);
   };
 
   return (
@@ -316,43 +377,55 @@ const CreatorCard = ({ creator, id, selected, onSelect }) => {
           }
         `}
       >
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="font-medium mb-4">{creator.vibe}</div>
-            <div className="text-sm text-slate-600">by {creator.name}</div>
+        <div>
+          <div className="font-medium mb-4">{creator.vibe}</div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600">by {creator.name}</span>
+              <button 
+                onClick={(e) => handleSubscribe(e)}
+                className="p-1 hover:bg-white/50 rounded-full transition-colors"
+              >
+                {isSubscribed ? '❤️' : '🤍'}
+              </button>
+            </div>
+            
+            <button 
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs px-2 py-1 bg-white/80 backdrop-blur-sm 
+                text-slate-600 rounded-md opacity-0 group-hover:opacity-100 
+                transition-opacity hover:bg-white/90"
+            >
+              Show Artifacts
+            </button>
           </div>
-          <button 
-            onClick={handleSubscribe}
-            className="p-2 hover:bg-white/50 rounded-full transition-colors"
-          >
-            {isSubscribed ? '❤️' : '🤍'}
-          </button>
         </div>
-        
-        <button className="absolute bottom-3 right-3 text-xs px-2 py-1 bg-white/80 backdrop-blur-sm 
-          text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-          Show Artifacts
-        </button>
       </button>
 
-      <div className="flex gap-2 mt-2 ml-2">
+      <div className="flex flex-wrap gap-2 mt-2 ml-2">
         {style.aesthetics.map(aesthetic => (
-          <div
+          <button
             key={aesthetic.id}
+            onClick={(e) => handleAestheticClick(e, aesthetic.id)}
             className={`
-              w-8 h-8 rounded-full ${aesthetic.color}
-              flex items-center justify-center
-              transition-transform hover:scale-110
+              px-3 py-1 rounded-full text-xs
+              ${aesthetic.color}
+              ${selectedAesthetics.has(aesthetic.id) 
+                ? 'ring-2 ring-offset-2 ring-slate-500 shadow-sm' 
+                : 'hover:opacity-90'
+              }
+              transition-all cursor-pointer
             `}
-            title={aesthetic.label}
-          />
+          >
+            {aesthetic.label}
+          </button>
         ))}
       </div>
     </div>
   );
 };
 
-const CreatorSidebar = ({ selected, onSelect }) => (
+const CreatorSidebar = ({ selected, onSelect, selectedAesthetics, onAestheticToggle }) => (
   <div className="w-80 h-[calc(100vh-2rem)] overflow-y-auto space-y-6 p-4">
     <div className="flex items-center justify-between mb-4">
       <h2 className="text-lg font-medium text-slate-700">Choose Style</h2>
@@ -372,6 +445,8 @@ const CreatorSidebar = ({ selected, onSelect }) => (
           creator={creator}
           selected={selected === id}
           onSelect={onSelect}
+          selectedAesthetics={selectedAesthetics}
+          onAestheticToggle={onAestheticToggle}
         />
       ))}
     </div>
@@ -381,6 +456,19 @@ const CreatorSidebar = ({ selected, onSelect }) => (
 const Demo = () => {
   const [selectedPurpose, setSelectedPurpose] = useState('capture'); // Default purpose
   const [selectedCreator, setSelectedCreator] = useState('luna');    // Default creator
+  const [selectedAesthetics, setSelectedAesthetics] = useState(new Set());
+
+  const handleAestheticToggle = (aestheticId) => {
+    setSelectedAesthetics(prev => {
+      const next = new Set(prev);
+      if (next.has(aestheticId)) {
+        next.delete(aestheticId);
+      } else {
+        next.add(aestheticId);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -401,6 +489,7 @@ const Demo = () => {
               <NoteInterface 
                 creatorId={selectedCreator}
                 purpose={selectedPurpose}
+                selectedAesthetics={selectedAesthetics}
               />
             </div>
           </div>
@@ -409,6 +498,8 @@ const Demo = () => {
           <CreatorSidebar
             selected={selectedCreator}
             onSelect={setSelectedCreator}
+            selectedAesthetics={selectedAesthetics}
+            onAestheticToggle={handleAestheticToggle}
           />
         </div>
       </div>
