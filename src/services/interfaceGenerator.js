@@ -189,4 +189,51 @@ async function generateInterfaceConfig(analysis, sketchAnalysis) {
   });
 
   return JSON.parse(response.choices[0].message.content);
+}
+
+export async function generateModeLabels(intention) {
+  if (!intention || intention.length < 20) return null;
+
+  const prompt = `As an empathetic AI assistant, analyze this user's intention: "${intention}"
+
+Generate three supportive responses (5-8 words each) that would resonate with their current state:
+
+1. A gentle phrase about processing thoughts/feelings
+2. A supportive phrase about moving forward/organizing
+3. A reassuring phrase about getting thoughts down quickly
+
+Make each phrase feel like a supportive friend who's really listening.
+Be personal and directly connect with their specific situation.
+Return only the three phrases, one per line, without any labels or prefixes.`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4",
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0.8,
+    max_tokens: 150,
+    presence_penalty: 0.6,
+    frequency_penalty: 0.6
+  });
+
+  try {
+    // Just split by newlines and take the first three non-empty lines
+    const lines = response.choices[0].message.content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith('For') && !line.startsWith('1.') && !line.startsWith('2.') && !line.startsWith('3.'))
+      .slice(0, 3);
+
+    return {
+      reflection: lines[0],
+      planning: lines[1],
+      capture: lines[2]
+    };
+  } catch (error) {
+    console.error('Error parsing AI response:', error);
+    return {
+      reflection: modeVariations.reflection[Math.floor(Math.random() * modeVariations.reflection.length)],
+      planning: modeVariations.planning[Math.floor(Math.random() * modeVariations.planning.length)],
+      capture: modeVariations.capture[Math.floor(Math.random() * modeVariations.capture.length)]
+    };
+  }
 } 
