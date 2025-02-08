@@ -237,10 +237,11 @@ const PurposeSelector = ({ selected, onSelect }) => (
   </div>
 );
 
-// First, let's restore the card styles and merge them with creators
+// First, let's add the Excalidraw links to the cardStyles object
 const cardStyles = {
   jun: {
     background: `bg-slate-50 [background-image:linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9)] bg-[length:16px_16px]`,
+    excalidrawLink: "https://link.excalidraw.com/readonly/qa5o7F4gD0qC5gNHm4Qu",
     aesthetics: [
       { 
         id: 'minimal', 
@@ -258,6 +259,7 @@ const cardStyles = {
   },
   luna: {
     background: 'bg-gradient-to-br from-yellow-50 to-orange-50',
+    excalidrawLink: "https://link.excalidraw.com/readonly/AQRMgvNGJdadf6QQUSV6",
     aesthetics: [
       { 
         id: 'encouraging', 
@@ -275,6 +277,7 @@ const cardStyles = {
   },
   marcus: {
     background: 'bg-blue-50 [background-image:linear-gradient(white_2px,transparent_2px),linear-gradient(90deg,white_2px,transparent_2px)] bg-[size:32px_32px]',
+    excalidrawLink: "https://link.excalidraw.com/readonly/amYLJLNZ4z3sLqJynrAW",
     aesthetics: [
       { 
         id: 'organized', 
@@ -292,7 +295,7 @@ const cardStyles = {
   }
 };
 
-// Update the CreatorCard component
+// Then update the CreatorCard component to handle the artifact click
 const CreatorCard = ({ 
   creator, 
   id, 
@@ -308,6 +311,13 @@ const CreatorCard = ({
   const handleSubscribe = (e) => {
     e.stopPropagation();
     onSubscribe(id);
+  };
+
+  const handleArtifactClick = (e) => {
+    e.stopPropagation();
+    if (style.excalidrawLink) {
+      window.open(style.excalidrawLink, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
@@ -339,7 +349,7 @@ const CreatorCard = ({
             </div>
             
             <button 
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleArtifactClick}
               className="text-xs px-2 py-1 bg-white/80 backdrop-blur-sm 
                 text-slate-600 rounded-md opacity-0 group-hover:opacity-100 
                 transition-opacity hover:bg-white/90"
