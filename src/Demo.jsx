@@ -237,109 +237,77 @@ const PurposeSelector = ({ selected, onSelect }) => (
   </div>
 );
 
+// First, let's restore the card styles and merge them with creators
+const cardStyles = {
+  jun: {
+    background: `bg-slate-50 [background-image:linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9)] bg-[length:16px_16px]`,
+    aesthetics: [
+      { 
+        id: 'minimal', 
+        label: 'Minimalist Interface',
+        color: 'bg-slate-100 text-slate-700',
+        features: ['fadeOldEntries', 'showOneAtTime']
+      },
+      { 
+        id: 'zen', 
+        label: 'Zen Transitions',
+        color: 'bg-slate-100 text-slate-700',
+        features: ['gentleAnimations']
+      }
+    ]
+  },
+  luna: {
+    background: 'bg-gradient-to-br from-yellow-50 to-orange-50',
+    aesthetics: [
+      { 
+        id: 'encouraging', 
+        label: 'Encouragement System',
+        color: 'bg-yellow-100 text-yellow-800',
+        features: ['showEncouragement']
+      },
+      { 
+        id: 'playful', 
+        label: 'Playful Elements',
+        color: 'bg-orange-100 text-orange-800',
+        features: ['playfulAnimations', 'randomBullets']
+      }
+    ]
+  },
+  marcus: {
+    background: 'bg-blue-50 [background-image:linear-gradient(white_2px,transparent_2px),linear-gradient(90deg,white_2px,transparent_2px)] bg-[size:32px_32px]',
+    aesthetics: [
+      { 
+        id: 'organized', 
+        label: 'Smart Organization',
+        color: 'bg-blue-100 text-blue-800',
+        features: ['autoTags']
+      },
+      { 
+        id: 'systematic', 
+        label: 'Thought Connections',
+        color: 'bg-indigo-100 text-indigo-800',
+        features: ['showConnections', 'systemicLayout']
+      }
+    ]
+  }
+};
+
+// Update the CreatorCard component
 const CreatorCard = ({ 
   creator, 
   id, 
   selected, 
   onSelect, 
+  isSubscribed,
+  onSubscribe,
   selectedAesthetics, 
   onAestheticToggle 
 }) => {
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  
-  // Custom styles for each creator
-  const cardStyles = {
-    jun: {
-      background: `bg-slate-50 [background-image:linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9)] bg-[length:16px_16px] bg-[position:0_0,8px_8px]`,
-      aesthetics: [
-        { 
-          id: 'minimal', 
-          label: 'Minimalist Interface',
-          color: 'bg-slate-100 text-slate-700',
-          features: ['fadeOldEntries', 'showOneAtTime']
-        },
-        { 
-          id: 'zen', 
-          label: 'Zen Transitions',
-          color: 'bg-slate-100 text-slate-700',
-          features: ['gentleAnimations']
-        }
-      ]
-    },
-    luna: {
-      background: 'bg-gradient-to-br from-yellow-50 to-orange-50',
-      aesthetics: [
-        { 
-          id: 'encouraging', 
-          label: 'Encouragement System',
-          color: 'bg-yellow-100 text-yellow-800',
-          features: ['showEncouragement']
-        },
-        { 
-          id: 'playful', 
-          label: 'Playful Elements',
-          color: 'bg-orange-100 text-orange-800',
-          features: ['playfulAnimations', 'randomBullets']
-        }
-      ]
-    },
-    marcus: {
-      background: 'bg-blue-50 [background-image:linear-gradient(white_2px,transparent_2px),linear-gradient(90deg,white_2px,transparent_2px)] bg-[size:32px_32px]',
-      aesthetics: [
-        { 
-          id: 'organized', 
-          label: 'Smart Organization',
-          color: 'bg-blue-100 text-blue-800',
-          features: ['autoTags']
-        },
-        { 
-          id: 'systematic', 
-          label: 'Thought Connections',
-          color: 'bg-indigo-100 text-indigo-800',
-          features: ['showConnections', 'systemicLayout']
-        }
-      ]
-    },
-    // Add a more sophisticated default style for new creators
-    default: {
-      background: `bg-gradient-to-br from-emerald-50 to-teal-50 
-                  [background-image:radial-gradient(circle_at_center,rgba(255,255,255,0.8)_1px,transparent_1px)] 
-                  [background-size:24px_24px]`,
-      aesthetics: [
-        { 
-          id: 'personal',
-          label: 'Personal Touch',
-          color: 'bg-emerald-100 text-emerald-800',
-          features: ['customBullets', 'gentleAnimations']
-        },
-        { 
-          id: 'modern',
-          label: 'Modern Feel',
-          color: 'bg-teal-100 text-teal-800',
-          features: ['cleanLayout', 'smoothTransitions']
-        }
-      ]
-    }
-  };
-
-  // Use the default style as fallback
   const style = cardStyles[id] || cardStyles.default;
 
-  // Ensure creator has required properties with defaults
-  const safeCreator = {
-    name: creator?.name || 'Anonymous Creator',
-    vibe: creator?.vibe || 'Custom Interface',
-    ...creator
-  };
-
   const handleSubscribe = (e) => {
-    e.stopPropagation(); // Prevent card selection when clicking heart
-    setIsSubscribed(!isSubscribed);
-  };
-
-  const handleAestheticClick = (e, aestheticId) => {
     e.stopPropagation();
-    onAestheticToggle(aestheticId);
+    onSubscribe(id);
   };
 
   return (
@@ -356,14 +324,14 @@ const CreatorCard = ({
         `}
       >
         <div>
-          <div className="font-medium mb-4">{safeCreator.vibe}</div>
+          <div className="font-medium mb-4">{creator.vibe}</div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-600">
-                by {safeCreator.name}
+                by {creator.name}
               </span>
               <button 
-                onClick={(e) => handleSubscribe(e)}
+                onClick={handleSubscribe}
                 className="p-1 hover:bg-white/50 rounded-full transition-colors"
               >
                 {isSubscribed ? '❤️' : '🤍'}
@@ -386,7 +354,10 @@ const CreatorCard = ({
         {style.aesthetics.map(aesthetic => (
           <button
             key={aesthetic.id}
-            onClick={(e) => handleAestheticClick(e, aesthetic.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAestheticToggle(aesthetic.id);
+            }}
             className={`
               px-3 py-1 rounded-full text-xs
               ${aesthetic.color}
@@ -413,7 +384,9 @@ const CreatorSidebar = ({
   onAestheticToggle,
   navigate,
   isCollapsed,
-  onToggle
+  onToggle,
+  subscribedCreators,
+  onSubscribe
 }) => (
   <div 
     className={`
@@ -462,6 +435,8 @@ const CreatorSidebar = ({
               onSelect={onSelect}
               selectedAesthetics={selectedAesthetics}
               onAestheticToggle={onAestheticToggle}
+              isSubscribed={subscribedCreators.has(id)}
+              onSubscribe={onSubscribe}
             />
           ))}
         </div>
@@ -481,9 +456,10 @@ const Demo = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Start collapsed
   const [preferences, setPreferences] = useState({
     purpose: '',
-    style: new Set(),
+    style: new Set(), // Initialize with empty Set
     additionalContext: ''
   });
+  const [subscribedCreators, setSubscribedCreators] = useState(new Set());
 
   useEffect(() => {
     const loadCreators = async () => {
@@ -516,7 +492,7 @@ const Demo = () => {
     // Store the preferences
     setPreferences(newPreferences);
 
-    // Update other state based on preferences
+    // Map purpose selections to internal states
     if (newPreferences.purpose === 'Quick Notes') {
       setSelectedPurpose('capture');
     } else if (newPreferences.purpose === 'Deep Thinking') {
@@ -525,6 +501,7 @@ const Demo = () => {
       setSelectedPurpose('planning');
     }
 
+    // Map style preferences to specific creators
     if (newPreferences.style.has('Minimalist')) {
       setSelectedCreator('jun');
     } else if (newPreferences.style.has('Creative')) {
@@ -534,6 +511,18 @@ const Demo = () => {
     }
 
     setShowPreferences(false);
+  };
+
+  const handleSubscribe = (creatorId) => {
+    setSubscribedCreators(prev => {
+      const next = new Set(prev);
+      if (next.has(creatorId)) {
+        next.delete(creatorId);
+      } else {
+        next.add(creatorId);
+      }
+      return next;
+    });
   };
 
   if (isLoading) {
@@ -554,7 +543,8 @@ const Demo = () => {
           <div className="max-w-6xl mx-auto">
             <PreferenceSummary 
               preferences={preferences}
-              creators={creators}
+              subscribedCreators={subscribedCreators}
+              onSubscribe={handleSubscribe}
               onEdit={() => setShowPreferences(true)}
             />
           </div>
@@ -581,6 +571,8 @@ const Demo = () => {
             navigate={navigate}
             isCollapsed={isSidebarCollapsed}
             onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            subscribedCreators={subscribedCreators}
+            onSubscribe={handleSubscribe}
           />
         </div>
       </div>
