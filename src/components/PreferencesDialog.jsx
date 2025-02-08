@@ -37,11 +37,20 @@ const PreferencesDialog = ({ onComplete }) => {
     creators: new Set()
   });
 
-  const modes = ['Reflection', 'Planning'];
-  const creators = ['Minimalism', 'Creator Subprayer2', 'Miniprayer 3'];
+  const modes = ['Reflection', 'Planning', 'Quick Capture'];
+  const creators = [
+    { id: 'minimalist', name: 'Minimalism', creator: 'jun' },
+    { id: 'creative', name: 'Creative Flow', creator: 'luna' },
+    { id: 'structured', name: 'Knowledge Architecture', creator: 'marcus' }
+  ];
 
   const handleSave = () => {
-    onComplete(preferences);
+    const mappedPreferences = {
+      purpose: preferences.mode.toLowerCase(),
+      style: preferences.creators,
+      additionalContext: preferences.intention
+    };
+    onComplete(mappedPreferences);
   };
 
   return (
@@ -99,17 +108,17 @@ const PreferencesDialog = ({ onComplete }) => {
 
           {/* Creator Options */}
           <div className="flex items-center gap-2">
-            {creators.map(creator => (
+            {creators.map(({ id, name }) => (
               <CreatorOption
-                key={creator}
-                label={creator}
-                selected={preferences.creators.has(creator)}
+                key={id}
+                label={name}
+                selected={preferences.creators.has(id)}
                 onClick={() => setPreferences(prev => {
                   const newCreators = new Set(prev.creators);
-                  if (newCreators.has(creator)) {
-                    newCreators.delete(creator);
+                  if (newCreators.has(id)) {
+                    newCreators.delete(id);
                   } else {
-                    newCreators.add(creator);
+                    newCreators.add(id);
                   }
                   return { ...prev, creators: newCreators };
                 })}

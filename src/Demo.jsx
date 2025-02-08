@@ -92,7 +92,7 @@ const combineFeatures = (creators, selectedCreator, selectedAesthetics) => {
   return features;
 };
 
-const NoteInterface = ({ creatorId, purpose, selectedAesthetics, creators }) => {
+const NoteInterface = ({ creatorId, purpose, selectedAesthetics, creators, additionalContext }) => {
   const [entries, setEntries] = useState([]);
   const [currentInput, setCurrentInput] = useState('');
   const [encouragement, setEncouragement] = useState('');
@@ -489,26 +489,40 @@ const Demo = () => {
   };
 
   const handlePreferencesComplete = (newPreferences) => {
-    // Store the preferences
     setPreferences(newPreferences);
 
-    // Map purpose selections to internal states
-    if (newPreferences.purpose === 'Quick Notes') {
-      setSelectedPurpose('capture');
-    } else if (newPreferences.purpose === 'Deep Thinking') {
-      setSelectedPurpose('reflection');
-    } else if (newPreferences.purpose === 'Task Planning') {
-      setSelectedPurpose('planning');
-    }
+    // Map mode to purpose
+    const purposeMap = {
+      'quick capture': 'capture',
+      'reflection': 'reflection',
+      'planning': 'planning'
+    };
+    setSelectedPurpose(purposeMap[newPreferences.purpose] || 'capture');
 
-    // Map style preferences to specific creators
-    if (newPreferences.style.has('Minimalist')) {
+    // Set creator based on style preferences
+    if (newPreferences.style.has('minimalist')) {
       setSelectedCreator('jun');
-    } else if (newPreferences.style.has('Creative')) {
+    } else if (newPreferences.style.has('creative')) {
       setSelectedCreator('luna');
-    } else if (newPreferences.style.has('Professional')) {
+    } else if (newPreferences.style.has('structured')) {
       setSelectedCreator('marcus');
     }
+
+    // Set aesthetics based on selected creators
+    const newAesthetics = new Set();
+    if (newPreferences.style.has('minimalist')) {
+      newAesthetics.add('zen');
+      newAesthetics.add('clean');
+    }
+    if (newPreferences.style.has('creative')) {
+      newAesthetics.add('playful');
+      newAesthetics.add('colorful');
+    }
+    if (newPreferences.style.has('structured')) {
+      newAesthetics.add('organized');
+      newAesthetics.add('professional');
+    }
+    setSelectedAesthetics(newAesthetics);
 
     setShowPreferences(false);
   };
@@ -558,6 +572,7 @@ const Demo = () => {
                 purpose={selectedPurpose}
                 selectedAesthetics={selectedAesthetics}
                 creators={creators}
+                additionalContext={preferences.additionalContext}
               />
             </div>
           </div>

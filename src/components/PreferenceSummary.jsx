@@ -25,23 +25,37 @@ const PreferenceSummary = ({
   // Generate description based on preferences
   const getDescription = () => {
     if (!preferences.purpose) return '';
-    const purpose = preferences.purpose;
-    const styles = Array.from(preferences.style || new Set()).join(' and ');
-    return `A ${styles.toLowerCase()} interface designed for ${purpose.toLowerCase()}, combining the best elements for your workflow.`;
+    
+    const purposeDisplay = {
+      'reflection': 'reflective thinking',
+      'planning': 'organized planning',
+      'capture': 'quick capture'
+    };
+
+    const styleDesc = Array.from(preferences.style).map(style => {
+      switch(style) {
+        case 'minimalist': return 'minimalist';
+        case 'creative': return 'creative';
+        case 'structured': return 'structured';
+        default: return style;
+      }
+    }).join(' and ');
+
+    return `A ${styleDesc} interface designed for ${purposeDisplay[preferences.purpose]}, combining the best elements for your workflow.`;
   };
 
   // Updated to include subscription handling
   const getRelevantCreators = () => {
     const creatorTags = [];
     
-    if (preferences.style.has('Minimalist')) {
+    if (preferences.style.has('minimalist')) {
       creatorTags.push({ id: 'jun', name: "Zen by Jun Tanaka" });
     }
-    if (preferences.style.has('Professional')) {
-      creatorTags.push({ id: 'marcus', name: "Connectivity by Marcus Chen" });
-    }
-    if (preferences.style.has('Creative')) {
+    if (preferences.style.has('creative')) {
       creatorTags.push({ id: 'luna', name: "Creative Flow by Luna Martinez" });
+    }
+    if (preferences.style.has('structured')) {
+      creatorTags.push({ id: 'marcus', name: "Knowledge Architecture by Marcus Chen" });
     }
     
     return creatorTags;
