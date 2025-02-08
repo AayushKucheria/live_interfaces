@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 import { PenTool, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCreators } from './services/creatorStorage';
+import PreferencesDialog from './components/PreferencesDialog';
 
 const purposes = {
   planning: {
@@ -445,6 +446,7 @@ const Demo = () => {
   const [creators, setCreators] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const [showPreferences, setShowPreferences] = useState(true);
 
   useEffect(() => {
     const loadCreators = async () => {
@@ -473,6 +475,26 @@ const Demo = () => {
     });
   };
 
+  const handlePreferencesComplete = (preferences) => {
+    if (preferences.purpose === 'Quick Notes') {
+      setSelectedPurpose('capture');
+    } else if (preferences.purpose === 'Deep Thinking') {
+      setSelectedPurpose('reflection');
+    } else if (preferences.purpose === 'Task Planning') {
+      setSelectedPurpose('planning');
+    }
+
+    if (preferences.style.has('Minimalist')) {
+      setSelectedCreator('jun');
+    } else if (preferences.style.has('Creative')) {
+      setSelectedCreator('luna');
+    } else if (preferences.style.has('Professional')) {
+      setSelectedCreator('marcus');
+    }
+
+    setShowPreferences(false);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
@@ -483,7 +505,10 @@ const Demo = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+      {showPreferences && (
+        <PreferencesDialog onComplete={handlePreferencesComplete} />
+      )}
+      <div className={`max-w-6xl mx-auto space-y-6 ${showPreferences ? 'blur-sm' : ''}`}>
         {/* Top Purpose Section */}
         <div className="mb-8">
           <PurposeSelector 
