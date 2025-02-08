@@ -7,6 +7,7 @@ import { PenTool, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCreators } from './services/creatorStorage';
 import PreferencesDialog from './components/PreferencesDialog';
+import PreferenceSummary from './components/PreferenceSummary';
 
 const purposes = {
   planning: {
@@ -478,6 +479,11 @@ const Demo = () => {
   const navigate = useNavigate();
   const [showPreferences, setShowPreferences] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Start collapsed
+  const [preferences, setPreferences] = useState({
+    purpose: '',
+    style: new Set(),
+    additionalContext: ''
+  });
 
   useEffect(() => {
     const loadCreators = async () => {
@@ -506,20 +512,24 @@ const Demo = () => {
     });
   };
 
-  const handlePreferencesComplete = (preferences) => {
-    if (preferences.purpose === 'Quick Notes') {
+  const handlePreferencesComplete = (newPreferences) => {
+    // Store the preferences
+    setPreferences(newPreferences);
+
+    // Update other state based on preferences
+    if (newPreferences.purpose === 'Quick Notes') {
       setSelectedPurpose('capture');
-    } else if (preferences.purpose === 'Deep Thinking') {
+    } else if (newPreferences.purpose === 'Deep Thinking') {
       setSelectedPurpose('reflection');
-    } else if (preferences.purpose === 'Task Planning') {
+    } else if (newPreferences.purpose === 'Task Planning') {
       setSelectedPurpose('planning');
     }
 
-    if (preferences.style.has('Minimalist')) {
+    if (newPreferences.style.has('Minimalist')) {
       setSelectedCreator('jun');
-    } else if (preferences.style.has('Creative')) {
+    } else if (newPreferences.style.has('Creative')) {
       setSelectedCreator('luna');
-    } else if (preferences.style.has('Professional')) {
+    } else if (newPreferences.style.has('Professional')) {
       setSelectedCreator('marcus');
     }
 
@@ -540,19 +550,17 @@ const Demo = () => {
         <PreferencesDialog onComplete={handlePreferencesComplete} />
       )}
       <div className={`h-screen flex flex-col ${showPreferences ? 'blur-sm' : ''}`}>
-        {/* Top Purpose Section - now with proper padding */}
         <div className="px-6 pt-6">
           <div className="max-w-6xl mx-auto">
-            <PurposeSelector 
-              selected={selectedPurpose}
-              onSelect={setSelectedPurpose}
+            <PreferenceSummary 
+              preferences={preferences}
+              creators={creators}
+              onEdit={() => setShowPreferences(true)}
             />
           </div>
         </div>
 
-        {/* Main Layout - Now fills available space */}
         <div className="flex-1 flex overflow-hidden px-6 pt-6">
-          {/* Center Note Interface */}
           <div className="flex-1 overflow-y-auto pr-2">
             <div className="bg-white rounded-xl shadow-sm p-6 h-full">
               <NoteInterface 
@@ -564,7 +572,6 @@ const Demo = () => {
             </div>
           </div>
 
-          {/* Right Creator Sidebar - Now sticks to the right edge */}
           <CreatorSidebar
             creators={creators}
             selected={selectedCreator}
