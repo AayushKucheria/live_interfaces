@@ -187,104 +187,83 @@ const PreferencesDialog = ({ onComplete }) => {
     onComplete(mappedPreferences);
   };
 
+  const styleButtonProps = (style) => ({
+    selected: preferences.creators.has(style),
+    onClick: () => setPreferences(prev => {
+      const newCreators = new Set(prev.creators);
+      if (newCreators.has(style)) {
+        newCreators.delete(style);
+      } else {
+        newCreators.add(style);
+      }
+      return { ...prev, creators: newCreators };
+    })
+  });
+
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="w-full h-full p-12 flex items-center justify-center">
-        <div className="bg-white rounded-3xl shadow-xl w-full max-w-[1000px] overflow-auto">
-          <div className="p-12 space-y-10">
-            <div className="space-y-4">
-              <h2 className="text-4xl font-medium text-slate-800">
+      <div className="w-full h-full p-6 flex items-center justify-center">
+        <div className="bg-white rounded-3xl shadow-xl w-full max-w-[1000px] h-[85vh] flex flex-col">
+          <div className="p-8 flex flex-col h-full">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-medium text-slate-800">
                 Plant the seed of your idea
               </h2>
-              <p className="text-slate-600 text-xl max-w-3xl">
+              <p className="text-slate-600 text-lg max-w-3xl">
                 We'll grow an interface that resonates with your intention, combining elements from our creators' gardens.
               </p>
             </div>
 
-            <div className="flex gap-12">
-              <div className="flex-1">
-                <div className="bg-slate-50/70 p-10 rounded-3xl">
-                  <textarea
-                    value={preferences.intention}
-                    onChange={(e) => setPreferences(prev => ({
-                      ...prev,
-                      intention: e.target.value
-                    }))}
-                    placeholder="What's on your mind? How are you feeling? Let's find the right space for your thoughts..."
-                    className="w-full h-48 p-8 text-xl bg-white rounded-2xl 
-                             border-none focus:ring-2 focus:ring-emerald-500
-                             placeholder:text-slate-400"
-                  />
+            <div className="flex-1 flex flex-col gap-8 mt-6 min-h-0">
+              <div className="flex gap-8 flex-1">
+                <div className="flex-1">
+                  <div className="bg-slate-50/70 p-6 rounded-3xl h-full flex flex-col">
+                    <textarea
+                      value={preferences.intention}
+                      onChange={(e) => setPreferences(prev => ({
+                        ...prev,
+                        intention: e.target.value
+                      }))}
+                      placeholder="What's on your mind? How are you feeling? Let's find the right space for your thoughts..."
+                      className="w-full flex-1 p-5 text-base bg-white rounded-2xl 
+                               border-none focus:ring-2 focus:ring-emerald-500
+                               placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-4 min-w-[320px]">
+                  {modes.map(({ id, label }) => (
+                    <QuickButton
+                      key={id}
+                      label={label}
+                      selected={preferences.mode === id}
+                      onClick={() => setPreferences(prev => ({
+                        ...prev,
+                        mode: id
+                      }))}
+                    />
+                  ))}
                 </div>
               </div>
 
-              <div className="flex flex-col gap-6 min-w-[380px]">
-                {modes.map(({ id, label }) => (
-                  <QuickButton
-                    key={id}
-                    label={label}
-                    selected={preferences.mode === id}
-                    onClick={() => setPreferences(prev => ({
-                      ...prev,
-                      mode: id
-                    }))}
-                  />
-                ))}
+              <div>
+                <p className="text-slate-600 text-base mb-4">Choose your garden's style:</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <StyleButton style="minimalist" {...styleButtonProps('minimalist')} />
+                  <StyleButton style="creative" {...styleButtonProps('creative')} />
+                  <StyleButton style="knowledge" {...styleButtonProps('structured')} />
+                </div>
               </div>
             </div>
 
-            <div className="pt-6">
-              <p className="text-slate-600 text-lg mb-6">Choose your garden's style:</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StyleButton
-                  style="minimalist"
-                  selected={preferences.creators.has('minimalist')}
-                  onClick={() => setPreferences(prev => {
-                    const newCreators = new Set(prev.creators);
-                    if (newCreators.has('minimalist')) {
-                      newCreators.delete('minimalist');
-                    } else {
-                      newCreators.add('minimalist');
-                    }
-                    return { ...prev, creators: newCreators };
-                  })}
-                />
-                <StyleButton
-                  style="creative"
-                  selected={preferences.creators.has('creative')}
-                  onClick={() => setPreferences(prev => {
-                    const newCreators = new Set(prev.creators);
-                    if (newCreators.has('creative')) {
-                      newCreators.delete('creative');
-                    } else {
-                      newCreators.add('creative');
-                    }
-                    return { ...prev, creators: newCreators };
-                  })}
-                />
-                <StyleButton
-                  style="knowledge"
-                  selected={preferences.creators.has('structured')}
-                  onClick={() => setPreferences(prev => {
-                    const newCreators = new Set(prev.creators);
-                    if (newCreators.has('structured')) {
-                      newCreators.delete('structured');
-                    } else {
-                      newCreators.add('structured');
-                    }
-                    return { ...prev, creators: newCreators };
-                  })}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-6">
+            <div className="flex justify-end mt-6">
               <button
                 onClick={handleSave}
-                className="px-12 py-4 bg-emerald-500 text-white text-xl rounded-2xl
+                className="px-10 py-3 bg-emerald-500 text-white text-lg rounded-xl
                          hover:bg-emerald-600 transition-colors"
               >
-                Continue
+                Create
               </button>
             </div>
           </div>

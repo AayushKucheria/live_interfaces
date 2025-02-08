@@ -562,43 +562,52 @@ const Demo = () => {
       {showPreferences && (
         <PreferencesDialog onComplete={handlePreferencesComplete} />
       )}
-      <div className={`h-screen flex flex-col ${showPreferences ? 'blur-sm' : ''}`}>
-        <div className="px-6 pt-6">
-          <div className="max-w-6xl mx-auto">
-            <PreferenceSummary 
-              preferences={preferences}
-              subscribedCreators={subscribedCreators}
-              onSubscribe={handleSubscribe}
-              onEdit={() => setShowPreferences(true)}
-            />
-          </div>
-        </div>
+      <div className={`min-h-screen flex flex-col ${showPreferences ? 'blur-sm' : ''}`}>
+        {/* Add decorative blurred elements */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-emerald-50/50 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-emerald-50/50 to-transparent pointer-events-none" />
 
-        <div className="flex-1 flex overflow-hidden px-6 pt-6">
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="bg-white rounded-xl shadow-sm p-6 h-full">
-              <NoteInterface 
-                creatorId={selectedCreator}
-                purpose={selectedPurpose}
-                selectedAesthetics={selectedAesthetics}
-                creators={creators}
-                additionalContext={preferences.additionalContext}
+        {/* Add vertical padding to create breathing space */}
+        <div className="flex-1 flex flex-col py-12">
+          {/* Preferences Summary */}
+          <div className="px-6 mb-8">
+            <div className="max-w-6xl mx-auto">
+              <PreferenceSummary 
+                preferences={preferences}
+                subscribedCreators={subscribedCreators}
+                onSubscribe={handleSubscribe}
+                onEdit={() => setShowPreferences(true)}
               />
             </div>
           </div>
 
-          <CreatorSidebar
-            creators={creators}
-            selected={selectedCreator}
-            onSelect={setSelectedCreator}
-            selectedAesthetics={selectedAesthetics}
-            onAestheticToggle={handleAestheticToggle}
-            navigate={navigate}
-            isCollapsed={isSidebarCollapsed}
-            onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            subscribedCreators={subscribedCreators}
-            onSubscribe={handleSubscribe}
-          />
+          {/* Main Content Area */}
+          <div className="flex-1 flex overflow-hidden px-6">
+            <div className="flex-1 overflow-y-auto pr-2">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm p-8 h-full">
+                <NoteInterface 
+                  creatorId={selectedCreator}
+                  purpose={selectedPurpose}
+                  selectedAesthetics={selectedAesthetics}
+                  creators={creators}
+                  additionalContext={preferences.additionalContext}
+                />
+              </div>
+            </div>
+
+            <CreatorSidebar
+              creators={creators}
+              selected={selectedCreator}
+              onSelect={setSelectedCreator}
+              selectedAesthetics={selectedAesthetics}
+              onAestheticToggle={handleAestheticToggle}
+              navigate={navigate}
+              isCollapsed={isSidebarCollapsed}
+              onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              subscribedCreators={subscribedCreators}
+              onSubscribe={handleSubscribe}
+            />
+          </div>
         </div>
       </div>
     </div>

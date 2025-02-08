@@ -196,14 +196,15 @@ export async function generateModeLabels(intention) {
 
   const prompt = `As an empathetic AI assistant, analyze this user's intention: "${intention}"
 
-Generate three supportive responses (5-8 words each) that would resonate with their current state:
+Generate three gentle, action-oriented phrases (5-8 words each) that would guide them towards:
 
-1. A gentle phrase about processing thoughts/feelings
-2. A supportive phrase about moving forward/organizing
-3. A reassuring phrase about getting thoughts down quickly
+1. A reflective phrase inviting them to process thoughts/feelings (e.g. "Let's explore what's on your mind")
+2. A planning phrase suggesting organization/next steps (e.g. "Map out your path, one step forward")
+3. A quick-capture phrase encouraging immediate expression (e.g. "Pour your thoughts out, just as they come")
 
-Make each phrase feel like a supportive friend who's really listening.
-Be personal and directly connect with their specific situation.
+Make each phrase feel like a supportive friend offering gentle guidance.
+Connect with their specific situation and emotional state.
+Use active verbs while maintaining a soft, encouraging tone.
 Return only the three phrases, one per line, without any labels or prefixes.`;
 
   const response = await openai.chat.completions.create({
@@ -236,4 +237,29 @@ Return only the three phrases, one per line, without any labels or prefixes.`;
       capture: modeVariations.capture[Math.floor(Math.random() * modeVariations.capture.length)]
     };
   }
-} 
+}
+
+// Update the fallback variations to be more action-oriented
+const modeVariations = {
+  reflection: [
+    "Let's explore what's on your mind",
+    "Take a moment to process together",
+    "Gently unpack your thoughts here",
+    "Create space for your reflections",
+    "Let's understand this together"
+  ],
+  planning: [
+    "Map out your next steps",
+    "Build your path, piece by piece",
+    "Shape your ideas into action",
+    "Let's organize your way forward",
+    "Break this down into small steps"
+  ],
+  capture: [
+    "Pour your thoughts onto the page",
+    "Catch your ideas as they flow",
+    "Get it all out, just as it comes",
+    "Start writing, no filters needed",
+    "Let your thoughts flow freely here"
+  ]
+}; 
