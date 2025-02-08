@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
-import { PenTool, Sparkles } from 'lucide-react';
+import { PenTool, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCreators } from './services/creatorStorage';
 import PreferencesDialog from './components/PreferencesDialog';
@@ -249,7 +249,7 @@ const CreatorCard = ({
   // Custom styles for each creator
   const cardStyles = {
     jun: {
-      background: `bg-slate-50 [background-image:linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9),linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9)] bg-[length:16px_16px] bg-[position:0_0,8px_8px]`,
+      background: `bg-slate-50 [background-image:linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9)] bg-[length:16px_16px] bg-[position:0_0,8px_8px]`,
       aesthetics: [
         { 
           id: 'minimal', 
@@ -410,31 +410,61 @@ const CreatorSidebar = ({
   onSelect, 
   selectedAesthetics, 
   onAestheticToggle,
-  navigate 
+  navigate,
+  isCollapsed,
+  onToggle
 }) => (
-  <div className="w-80 h-[calc(100vh-2rem)] overflow-y-auto space-y-6 p-4">
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-lg font-medium text-slate-700">Choose Style</h2>
-      <button 
-        onClick={() => navigate('/become-creator')}
-        className="px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-full 
-                 hover:bg-emerald-100 transition-colors"
-      >
-        Become a Creator
-      </button>
-    </div>
-    <div className="space-y-6">
-      {Object.entries(creators).map(([id, creator]) => (
-        <CreatorCard
-          key={id}
-          id={id}
-          creator={creator}
-          selected={selected === id}
-          onSelect={onSelect}
-          selectedAesthetics={selectedAesthetics}
-          onAestheticToggle={onAestheticToggle}
-        />
-      ))}
+  <div 
+    className={`
+      relative flex-shrink-0
+      transition-all duration-300 ease-in-out
+      h-full
+      ${isCollapsed ? 'w-12' : 'w-80'}
+    `}
+  >
+    {/* Toggle Button */}
+    <button
+      onClick={onToggle}
+      className="absolute -left-3 top-1/2 transform -translate-y-1/2
+               w-6 h-12 bg-white rounded-l-lg shadow-md
+               flex items-center justify-center
+               hover:bg-slate-50 transition-colors z-10"
+    >
+      {isCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+    </button>
+
+    {/* Sidebar Content Container */}
+    <div className="h-full bg-white rounded-l-xl shadow-sm">
+      <div className={`
+        h-full overflow-y-auto
+        ${isCollapsed ? 'opacity-0 invisible' : 'opacity-100 visible'}
+        transition-all duration-200
+        space-y-6 p-4
+      `}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium text-slate-700">Choose Style</h2>
+          <button 
+            onClick={() => navigate('/become-creator')}
+            className="px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-full 
+                     hover:bg-emerald-100 transition-colors"
+          >
+            Become a Creator
+          </button>
+        </div>
+        <div className="space-y-6">
+          {Object.entries(creators).map(([id, creator]) => (
+            <CreatorCard
+              key={id}
+              id={id}
+              creator={creator}
+              selected={selected === id}
+              onSelect={onSelect}
+              selectedAesthetics={selectedAesthetics}
+              onAestheticToggle={onAestheticToggle}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   </div>
 );
@@ -447,6 +477,7 @@ const Demo = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const [showPreferences, setShowPreferences] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Start collapsed
 
   useEffect(() => {
     const loadCreators = async () => {
@@ -504,24 +535,26 @@ const Demo = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-slate-50">
       {showPreferences && (
         <PreferencesDialog onComplete={handlePreferencesComplete} />
       )}
-      <div className={`max-w-6xl mx-auto space-y-6 ${showPreferences ? 'blur-sm' : ''}`}>
-        {/* Top Purpose Section */}
-        <div className="mb-8">
-          <PurposeSelector 
-            selected={selectedPurpose}
-            onSelect={setSelectedPurpose}
-          />
+      <div className={`h-screen flex flex-col ${showPreferences ? 'blur-sm' : ''}`}>
+        {/* Top Purpose Section - now with proper padding */}
+        <div className="px-6 pt-6">
+          <div className="max-w-6xl mx-auto">
+            <PurposeSelector 
+              selected={selectedPurpose}
+              onSelect={setSelectedPurpose}
+            />
+          </div>
         </div>
 
-        {/* Main Layout */}
-        <div className="flex gap-6">
-          {/* Center Note Interface - Now with card styling */}
-          <div className="flex-1">
-            <div className="bg-white rounded-xl shadow-sm p-6">
+        {/* Main Layout - Now fills available space */}
+        <div className="flex-1 flex overflow-hidden px-6 pt-6">
+          {/* Center Note Interface */}
+          <div className="flex-1 overflow-y-auto pr-2">
+            <div className="bg-white rounded-xl shadow-sm p-6 h-full">
               <NoteInterface 
                 creatorId={selectedCreator}
                 purpose={selectedPurpose}
@@ -531,7 +564,7 @@ const Demo = () => {
             </div>
           </div>
 
-          {/* Right Creator Sidebar */}
+          {/* Right Creator Sidebar - Now sticks to the right edge */}
           <CreatorSidebar
             creators={creators}
             selected={selectedCreator}
@@ -539,6 +572,8 @@ const Demo = () => {
             selectedAesthetics={selectedAesthetics}
             onAestheticToggle={handleAestheticToggle}
             navigate={navigate}
+            isCollapsed={isSidebarCollapsed}
+            onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           />
         </div>
       </div>
