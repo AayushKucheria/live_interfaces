@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCreators } from './services/creatorStorage';
 import PreferencesDialog from './components/PreferencesDialog';
 import PreferenceSummary from './components/PreferenceSummary';
+import { saveAs } from 'file-saver'; // Import file-saver for easier file downloads
 
 const purposes = {
   planning: {
@@ -549,6 +550,62 @@ const Demo = () => {
     });
   };
 
+  const handleDownload = () => {
+    // Get only the selected creator
+    const selectedCreatorData = creators[selectedCreator];
+    
+    if (!selectedCreatorData) {
+      console.error('Selected creator not found');
+      return;
+    }
+    
+    // Create a filtered aesthetics collection that only includes selected ones
+    const filteredAesthetics = [];
+    
+    // Check if the creator has aesthetics defined
+    if (selectedCreatorData.style?.aesthetics) {
+      // Filter only the selected aesthetics
+      selectedCreatorData.style.aesthetics.forEach(aesthetic => {
+        if (selectedAesthetics.has(aesthetic.id)) {
+          filteredAesthetics.push(aesthetic);
+        }
+      });
+    }
+    
+    // Filter cardStyles information (from the styling)
+    const selectedCardStyle = cardStyles[selectedCreator] || {};
+    
+    // Create a streamlined export with only the active components
+    const dataToDownload = {
+      activeInterface: {
+        creator: {
+          id: selectedCreator,
+          name: selectedCreatorData.name,
+          vibe: selectedCreatorData.vibe,
+          style: {
+            ...selectedCreatorData.style,
+            aesthetics: filteredAesthetics
+          },
+          features: selectedCreatorData.features
+        },
+        purpose: selectedPurpose,
+        preferences: {
+          additionalContext: preferences.additionalContext,
+          purpose: preferences.purpose,
+          style: Array.from(preferences.style)
+        },
+        styling: selectedCardStyle
+      }
+    };
+
+    // Convert data to JSON
+    const jsonString = JSON.stringify(dataToDownload, null, 2);
+
+    // Create a Blob and use file-saver to trigger download
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    saveAs(blob, `note-taking-interface-${selectedCreator}.json`);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
@@ -608,6 +665,16 @@ const Demo = () => {
               onSubscribe={handleSubscribe}
             />
           </div>
+        </div>
+
+        {/* Download Button */}
+        <div className="flex justify-center mb-4">
+          <button 
+            onClick={handleDownload}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          >
+            Download
+          </button>
         </div>
       </div>
     </div>
