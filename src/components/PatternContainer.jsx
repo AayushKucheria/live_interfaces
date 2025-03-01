@@ -1,4 +1,5 @@
 import React from 'react';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const PatternContainer = ({ pattern, metadata, example }) => {
   // Ensure we have components to render
@@ -11,7 +12,9 @@ const PatternContainer = ({ pattern, metadata, example }) => {
         <p className="text-slate-600 text-sm">{metadata?.description || "No description available"}</p>
       </div>
       <div className="pattern-demo bg-slate-50 p-4 rounded-lg">
-        {ExampleComponent ? <ExampleComponent /> : <p>Example not available</p>}
+        <ErrorBoundary>
+          {ExampleComponent ? <ExampleComponent /> : <p>Example not available</p>}
+        </ErrorBoundary>
       </div>
     </div>
   );

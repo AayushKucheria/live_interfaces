@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 // In a real implementation, this would use NLP or an AI service
 const generateTags = (text) => {
@@ -26,17 +26,20 @@ const AutoTagging = ({
   ...props 
 }) => {
   const [tags, setTags] = useState([]);
+  const stableOnTagsGenerated = useCallback(onTagsGenerated, []);
   
   useEffect(() => {
     if (text.length > 5) {
       const newTags = generateTags(text);
-      setTags(newTags);
-      onTagsGenerated(newTags);
-    } else {
+      if (JSON.stringify(newTags) !== JSON.stringify(tags)) {
+        setTags(newTags);
+        stableOnTagsGenerated(newTags);
+      }
+    } else if (tags.length > 0) {
       setTags([]);
-      onTagsGenerated([]);
+      stableOnTagsGenerated([]);
     }
-  }, [text, onTagsGenerated]);
+  }, [text, tags, stableOnTagsGenerated]);
   
   return (
     <div className={`auto-tagging-pattern ${className}`} {...props}>
