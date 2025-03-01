@@ -206,10 +206,9 @@ const ${pattern.id || 'Component'} = (props) => {
     // Process the component with enhanced debugging
     const result = sanitizeAndParseComponent(code, debugInfo);
     
-    // Include debug info in the result
+    // Return result without debugInfo
     return {
-      ...result,
-      debugInfo
+      ...result
     };
   } catch (error) {
     debugLog("Composition failed", error);
@@ -223,8 +222,7 @@ const ${pattern.id || 'Component'} = (props) => {
       component: null,
       metadata: null,
       example: null,
-      error: `Failed to compose patterns: ${error.message || "Unknown error"}`,
-      debugInfo
+      error: `Failed to compose patterns: ${error.message || "Unknown error"}`
     };
   }
 }
@@ -309,8 +307,7 @@ function sanitizeAndParseComponent(code, debugInfo = {}) {
       component: component || extractRegexPart(componentRegex, sanitized),
       metadata: metadata || extractRegexPart(metadataRegex, sanitized),
       example: example || extractRegexPart(exampleRegex, sanitized),
-      componentName,
-      debugInfo
+      componentName
     };
   } catch (error) {
     debugLog("Error in sanitizeAndParseComponent", error);
@@ -324,8 +321,7 @@ function sanitizeAndParseComponent(code, debugInfo = {}) {
       component: null,
       metadata: null,
       example: null,
-      error: `Failed to parse component: ${error.message}`,
-      debugInfo
+      error: `Failed to parse component: ${error.message}`
     };
   }
 }
