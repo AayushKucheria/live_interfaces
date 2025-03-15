@@ -4,34 +4,31 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 import { PenTool, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { getCreators } from './services/creatorStorage';
-import PreferencesDialog from './components/PreferencesDialog';
-import PreferenceSummary from './components/PreferenceSummary';
 import { saveAs } from 'file-saver'; // Import file-saver for easier file downloads
 
 const purposes = {
   planning: {
     title: "Planning",
-    description: "Step by step, map out what lies ahead"
+    description: "Plan your notes"
   },
   capture: {
     title: "Quick Capture",
-    description: "Let thoughts flow freely as they come"
+    description: "Quickly capture notes"
   },
   reflection: {
     title: "Reflection", 
-    description: "Take a moment to look back and process"
+    description: "Reflect on your notes"
   }
 };
 
-// Encouraging messages for Luna's interface
+// Simple encouraging messages
 const encouragements = [
-  "Your ideas are flowing beautifully...",
-  "What a wonderful thought! Keep going...",
-  "Your creativity is shining through...",
-  "I love where this is heading...",
-  "You're on an inspiring path..."
+  "Keep going...",
+  "Looking good...",
+  "Nice progress...",
+  "Keep it up...",
+  "Doing well..."
 ];
 
 const OptionBubble = ({ label, selected, onClick }) => (
@@ -144,6 +141,217 @@ const NoteInterface = ({ creatorId, purpose, selectedAesthetics, creators, addit
     );
   };
 
+  // Render the causal loop visualization when Jun's style is selected
+  const renderCausalLoopVisualization = () => {
+    if (creatorId !== 'jun' || !creator.features?.causalModel || !combinedFeatures.showRelationships) {
+      return null;
+    }
+
+    const { objects, morphisms } = creator.features.causalModel;
+
+    return (
+      <div className={creator.style.networkGraph}>
+        <h3 className="text-sm font-medium text-slate-700 mb-3">Causal Loop Visualization</h3>
+        <div className="relative h-40 border border-blue-100 rounded-lg bg-white p-4">
+          {/* Wolves node at top */}
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-100 px-3 py-1 rounded text-blue-800 font-medium">
+            {objects[0].name}
+          </div>
+          
+          {/* Chickens node at bottom */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-100 px-3 py-1 rounded text-yellow-800 font-medium">
+            {objects[1].name}
+          </div>
+          
+          {/* Arrow from wolves to chickens */}
+          <div className="absolute top-[40px] left-1/3 transform rotate-135 text-red-500 font-bold">
+            ↓
+            <span className="absolute left-4 top-0 text-xs text-red-600 whitespace-nowrap">
+              {morphisms[0].type}
+            </span>
+          </div>
+          
+          {/* Arrow from chickens to wolves */}
+          <div className="absolute bottom-[40px] right-1/3 transform rotate-45 text-green-500 font-bold">
+            ↑
+            <span className="absolute right-4 bottom-0 text-xs text-green-600 whitespace-nowrap">
+              {morphisms[1].type}
+            </span>
+          </div>
+        </div>
+        
+        <div className="mt-2 text-xs text-slate-500">
+          <p>This visualization represents a predator-prey relationship in a causal loop.</p>
+          <p className="mt-1">Theory: {creator.features.modelData.theory}</p>
+        </div>
+      </div>
+    );
+  };
+
+  // Render the extended causal network visualization when Marcus's style is selected
+  const renderComplexNetworkVisualization = () => {
+    if (creatorId !== 'marcus' || !creator.features?.causalModel || !combinedFeatures.showComplexNetwork) {
+      return null;
+    }
+
+    const { objects, morphisms } = creator.features.causalModel;
+
+    return (
+      <div className={creator.style.networkGraph}>
+        <h3 className="text-sm font-medium text-indigo-700 mb-3">Extended Causal Network</h3>
+        <div className="relative h-64 border border-indigo-100 rounded-lg bg-white p-4">
+          {/* Wolves node at top */}
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-indigo-100 px-3 py-1 rounded text-indigo-800 font-medium">
+            {objects[0].name}
+          </div>
+          
+          {/* Chickens node in middle */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-100 px-3 py-1 rounded text-yellow-800 font-medium">
+            {objects[1].name}
+          </div>
+          
+          {/* Worms node at bottom */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-green-100 px-3 py-1 rounded text-green-800 font-medium">
+            {objects[2].name}
+          </div>
+          
+          {/* Arrow from wolves to chickens */}
+          <div className="absolute top-[30px] left-1/3 transform rotate-135 text-red-500 font-bold">
+            ↓
+            <span className="absolute left-4 top-0 text-xs text-red-600 whitespace-nowrap">
+              {morphisms[0].type}
+            </span>
+          </div>
+          
+          {/* Arrow from chickens to wolves */}
+          <div className="absolute top-[60px] right-1/3 transform rotate-45 text-green-500 font-bold">
+            ↑
+            <span className="absolute right-4 top-0 text-xs text-green-600 whitespace-nowrap">
+              {morphisms[1].type}
+            </span>
+          </div>
+          
+          {/* Arrow from chickens to worms */}
+          <div className="absolute bottom-[90px] left-1/3 transform rotate-135 text-red-500 font-bold">
+            ↓
+            <span className="absolute left-4 bottom-0 text-xs text-red-600 whitespace-nowrap">
+              {morphisms[2].type}
+            </span>
+          </div>
+          
+          {/* Arrow from worms to chickens */}
+          <div className="absolute bottom-[60px] right-1/3 transform rotate-45 text-green-500 font-bold">
+            ↑
+            <span className="absolute right-4 bottom-0 text-xs text-green-600 whitespace-nowrap">
+              {morphisms[3].type}
+            </span>
+          </div>
+        </div>
+        
+        <div className="mt-2 text-xs text-indigo-500">
+          <p>This visualization represents a complete ecosystem with multiple predator-prey relationships.</p>
+          <p className="mt-1">Theory: {creator.features.modelData.theory}</p>
+        </div>
+      </div>
+    );
+  };
+
+  // Render the creative ecosystem visualization when Luna's style is selected
+  const renderCreativeEcosystemVisualization = () => {
+    if (creatorId !== 'luna' || !creator.features?.causalModel || !combinedFeatures.showCreativeEcosystem) {
+      return null;
+    }
+
+    const { objects, morphisms } = creator.features.causalModel;
+
+    return (
+      <div className={creator.style.networkGraph}>
+        <h3 className="text-sm font-medium text-purple-700 mb-3">Creative Ecosystem Map</h3>
+        <div className="relative h-64 border border-purple-100 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 p-4">
+          {/* Circular arrangement of nodes */}
+          <div className="absolute w-full h-full flex items-center justify-center">
+            {/* Central container for visual arrangement */}
+            <div className="relative w-48 h-48">
+              {/* Wolves node at top-left */}
+              <div className="absolute top-0 left-0 bg-purple-100 px-3 py-1 rounded-full text-purple-800 font-medium shadow-sm">
+                {objects[0].name}
+              </div>
+              
+              {/* Chickens node at top-right */}
+              <div className="absolute top-0 right-0 bg-pink-100 px-3 py-1 rounded-full text-pink-800 font-medium shadow-sm">
+                {objects[1].name}
+              </div>
+              
+              {/* Worms node at bottom */}
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-blue-100 px-3 py-1 rounded-full text-blue-800 font-medium shadow-sm">
+                {objects[2].name}
+              </div>
+
+              {/* Connection lines with animations */}
+              <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                {/* Wolf to Chicken (negative) */}
+                <path 
+                  d="M 40,20 L 110,20" 
+                  stroke="#f87171" 
+                  strokeWidth="2" 
+                  fill="none"
+                  strokeDasharray="4 2"
+                  className="animate-pulse"
+                />
+                <text x="70" y="15" fontSize="10" fill="#ef4444" textAnchor="middle">−</text>
+                
+                {/* Chicken to Wolf (positive) */}
+                <path 
+                  d="M 110,30 L 40,30" 
+                  stroke="#22c55e" 
+                  strokeWidth="2" 
+                  fill="none"
+                />
+                <text x="70" y="45" fontSize="10" fill="#16a34a" textAnchor="middle">+</text>
+                
+                {/* Chicken to Worm (negative) */}
+                <path 
+                  d="M 120,40 L 90,120" 
+                  stroke="#f87171" 
+                  strokeWidth="2" 
+                  fill="none"
+                  strokeDasharray="4 2"
+                  className="animate-pulse"
+                />
+                <text x="115" y="90" fontSize="10" fill="#ef4444" textAnchor="middle">−</text>
+                
+                {/* Worm to Chicken (positive) */}
+                <path 
+                  d="M 100,110 L 130,40" 
+                  stroke="#22c55e" 
+                  strokeWidth="2" 
+                  fill="none"
+                />
+                <text x="125" y="70" fontSize="10" fill="#16a34a" textAnchor="middle">+</text>
+                
+                {/* Worm to Wolf (negative) - the new relationship */}
+                <path 
+                  d="M 60,120 L 30,40" 
+                  stroke="#f87171" 
+                  strokeWidth="2" 
+                  fill="none"
+                  strokeDasharray="4 2"
+                  className="animate-pulse"
+                />
+                <text x="35" y="80" fontSize="10" fill="#ef4444" textAnchor="middle">−</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-2 text-xs text-purple-500">
+          <p>This creative map shows a complex ecosystem with parasitic worms affecting both chickens and wolves.</p>
+          <p className="mt-1 italic">Five relationships balance this delicate system.</p>
+        </div>
+      </div>
+    );
+  };
+
   const renderEntry = (entry, idx) => {
     // Handle Jun's single entry display
     if (creatorId === 'jun' && creator.features.showOneAtTime) {
@@ -207,6 +415,9 @@ const NoteInterface = ({ creatorId, purpose, selectedAesthetics, creators, addit
       )}
 
       <div className="mt-4">
+        {renderCausalLoopVisualization()}
+        {renderComplexNetworkVisualization()}
+        {renderCreativeEcosystemVisualization()}
         {entries.map((entry, idx) => renderEntry(entry, idx))}
       </div>
     </div>
@@ -238,65 +449,62 @@ const PurposeSelector = ({ selected, onSelect }) => (
   </div>
 );
 
-// First, let's add the Excalidraw links to the cardStyles object
+// Simple card styles
 const cardStyles = {
   jun: {
-    background: `bg-slate-50 [background-image:linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%,#f1f5f9)] bg-[length:16px_16px]`,
-    excalidrawLink: "https://link.excalidraw.com/readonly/qa5o7F4gD0qC5gNHm4Qu",
+    background: `bg-blue-50 bg-[linear-gradient(135deg,rgba(255,255,255,0.5)_21px,transparent_22px)]`,
     aesthetics: [
       { 
         id: 'minimal', 
-        label: 'Minimalist Interface',
-        color: 'bg-slate-100 text-slate-700',
-        features: ['fadeOldEntries', 'showOneAtTime']
+        label: 'Causal View',
+        color: 'bg-blue-100 text-blue-800',
+        features: ['fadeOldEntries', 'showRelationships']
       },
       { 
         id: 'zen', 
-        label: 'Zen Transitions',
-        color: 'bg-slate-100 text-slate-700',
-        features: ['gentleAnimations']
+        label: 'Graph Mode',
+        color: 'bg-indigo-100 text-indigo-800',
+        features: ['showOneAtTime', 'showCausalGraph']
       }
     ]
   },
   luna: {
-    background: 'bg-gradient-to-br from-yellow-50 to-orange-50',
-    excalidrawLink: "https://link.excalidraw.com/readonly/AQRMgvNGJdadf6QQUSV6",
+    background: 'bg-gradient-to-br from-purple-50 to-pink-50 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.4)_25%,rgba(255,255,255,0.4)_50%,transparent_50%,transparent_75%,rgba(255,255,255,0.4)_75%)] bg-[length:10px_10px]',
     aesthetics: [
       { 
         id: 'encouraging', 
-        label: 'Encouragement System',
-        color: 'bg-yellow-100 text-yellow-800',
-        features: ['showEncouragement']
+        label: 'Creative Ecosystem',
+        color: 'bg-purple-100 text-purple-800',
+        features: ['showCreativeEcosystem', 'showEncouragement']
       },
       { 
         id: 'playful', 
-        label: 'Playful Elements',
-        color: 'bg-orange-100 text-orange-800',
-        features: ['playfulAnimations', 'randomBullets']
+        label: 'Visual Flow',
+        color: 'bg-pink-100 text-pink-800',
+        features: ['playfulAnimations', 'showConnections']
       }
     ]
   },
   marcus: {
-    background: 'bg-blue-50 [background-image:linear-gradient(white_2px,transparent_2px),linear-gradient(90deg,white_2px,transparent_2px)] bg-[size:32px_32px]',
-    excalidrawLink: "https://link.excalidraw.com/readonly/amYLJLNZ4z3sLqJynrAW",
+    background: 'bg-indigo-50 bg-[radial-gradient(circle,rgba(255,255,255,0.8)_1px,transparent_1px)] bg-[size:20px_20px]',
     aesthetics: [
       { 
         id: 'organized', 
-        label: 'Smart Organization',
-        color: 'bg-blue-100 text-blue-800',
-        features: ['autoTags']
+        label: 'Network View',
+        color: 'bg-indigo-100 text-indigo-800',
+        features: ['showComplexNetwork', 'autoTags']
       },
       { 
         id: 'systematic', 
-        label: 'Thought Connections',
-        color: 'bg-indigo-100 text-indigo-800',
-        features: ['showConnections', 'systemicLayout']
+        label: 'Detailed Analysis',
+        color: 'bg-purple-100 text-purple-800',
+        features: ['showConnections', 'showCategories']
       }
     ]
   }
 };
 
-// Then update the CreatorCard component to handle the artifact click
+// Simplified creator card
 const CreatorCard = ({ 
   creator, 
   id, 
@@ -314,13 +522,6 @@ const CreatorCard = ({
     onSubscribe(id);
   };
 
-  const handleArtifactClick = (e) => {
-    e.stopPropagation();
-    if (style.excalidrawLink) {
-      window.open(style.excalidrawLink, '_blank', 'noopener,noreferrer');
-    }
-  };
-
   return (
     <div className="relative group">
       <div
@@ -329,8 +530,8 @@ const CreatorCard = ({
           w-full p-4 rounded-xl text-left transition-all cursor-pointer
           ${style.background}
           ${selected 
-            ? 'ring-2 ring-emerald-500 shadow-lg scale-[1.02] transition-transform' 
-            : 'hover:shadow-md hover:scale-[1.01] transition-transform'
+            ? 'ring-2 ring-emerald-500 shadow-lg' 
+            : 'hover:shadow-md'
           }
         `}
       >
@@ -348,15 +549,6 @@ const CreatorCard = ({
                 {isSubscribed ? '❤️' : '🤍'}
               </button>
             </div>
-            
-            <button 
-              onClick={handleArtifactClick}
-              className="text-xs px-2 py-1 bg-white/80 backdrop-blur-sm 
-                text-slate-600 rounded-md opacity-0 group-hover:opacity-100 
-                transition-opacity hover:bg-white/90"
-            >
-              Show Artifacts
-            </button>
           </div>
         </div>
       </div>
@@ -373,7 +565,7 @@ const CreatorCard = ({
               px-3 py-1 rounded-full text-xs
               ${aesthetic.color}
               ${selectedAesthetics.has(aesthetic.id) 
-                ? 'ring-2 ring-offset-2 ring-slate-500 shadow-sm' 
+                ? 'ring-2 ring-slate-500' 
                 : 'hover:opacity-90'
               }
               transition-all cursor-pointer
@@ -393,7 +585,6 @@ const CreatorSidebar = ({
   onSelect, 
   selectedAesthetics, 
   onAestheticToggle,
-  navigate,
   isCollapsed,
   onToggle,
   subscribedCreators,
@@ -428,13 +619,6 @@ const CreatorSidebar = ({
       `}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium text-slate-700">Choose Style</h2>
-          <button 
-            onClick={() => navigate('/become-creator')}
-            className="px-3 py-1 text-sm bg-emerald-50 text-emerald-700 rounded-full 
-                     hover:bg-emerald-100 transition-colors"
-          >
-            Become a Creator
-          </button>
         </div>
         <div className="space-y-6">
           {Object.entries(creators).map(([id, creator]) => (
@@ -459,15 +643,14 @@ const CreatorSidebar = ({
 const Demo = () => {
   const [selectedPurpose, setSelectedPurpose] = useState('capture');
   const [selectedCreator, setSelectedCreator] = useState('luna');
-  const [selectedAesthetics, setSelectedAesthetics] = useState(new Set());
+  const [selectedAesthetics, setSelectedAesthetics] = useState(new Set(['playful', 'colorful']));
   const [creators, setCreators] = useState({});
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-  const [showPreferences, setShowPreferences] = useState(true);
+  const [showPreferences, setShowPreferences] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Start collapsed
   const [preferences, setPreferences] = useState({
-    purpose: '',
-    style: new Set(), // Initialize with empty Set
+    purpose: 'quick capture',
+    style: new Set(['creative']), // Initialize with creative style
     additionalContext: ''
   });
   const [subscribedCreators, setSubscribedCreators] = useState(new Set());
@@ -497,45 +680,6 @@ const Demo = () => {
       }
       return next;
     });
-  };
-
-  const handlePreferencesComplete = (newPreferences) => {
-    setPreferences(newPreferences);
-
-    // Map mode to purpose
-    const purposeMap = {
-      'quick capture': 'capture',
-      'reflection': 'reflection',
-      'planning': 'planning'
-    };
-    setSelectedPurpose(purposeMap[newPreferences.purpose] || 'capture');
-
-    // Set creator based on style preferences
-    if (newPreferences.style.has('minimalist')) {
-      setSelectedCreator('jun');
-    } else if (newPreferences.style.has('creative')) {
-      setSelectedCreator('luna');
-    } else if (newPreferences.style.has('structured')) {
-      setSelectedCreator('marcus');
-    }
-
-    // Set aesthetics based on selected creators
-    const newAesthetics = new Set();
-    if (newPreferences.style.has('minimalist')) {
-      newAesthetics.add('zen');
-      newAesthetics.add('clean');
-    }
-    if (newPreferences.style.has('creative')) {
-      newAesthetics.add('playful');
-      newAesthetics.add('colorful');
-    }
-    if (newPreferences.style.has('structured')) {
-      newAesthetics.add('organized');
-      newAesthetics.add('professional');
-    }
-    setSelectedAesthetics(newAesthetics);
-
-    setShowPreferences(false);
   };
 
   const handleSubscribe = (creatorId) => {
@@ -616,28 +760,13 @@ const Demo = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {showPreferences && (
-        <PreferencesDialog onComplete={handlePreferencesComplete} />
-      )}
-      <div className={`min-h-screen flex flex-col ${showPreferences ? 'blur-sm' : ''}`}>
+      <div className="min-h-screen flex flex-col">
         {/* Add decorative blurred elements */}
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-emerald-50/50 to-transparent pointer-events-none" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-emerald-50/50 to-transparent pointer-events-none" />
 
         {/* Add vertical padding to create breathing space */}
         <div className="flex-1 flex flex-col py-12">
-          {/* Preferences Summary */}
-          <div className="px-6 mb-8">
-            <div className="max-w-6xl mx-auto">
-              <PreferenceSummary 
-                preferences={preferences}
-                subscribedCreators={subscribedCreators}
-                onSubscribe={handleSubscribe}
-                onEdit={() => setShowPreferences(true)}
-              />
-            </div>
-          </div>
-
           {/* Main Content Area */}
           <div className="flex-1 flex overflow-hidden px-6">
             <div className="flex-1 overflow-y-auto pr-2">
@@ -658,7 +787,6 @@ const Demo = () => {
               onSelect={setSelectedCreator}
               selectedAesthetics={selectedAesthetics}
               onAestheticToggle={handleAestheticToggle}
-              navigate={navigate}
               isCollapsed={isSidebarCollapsed}
               onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               subscribedCreators={subscribedCreators}

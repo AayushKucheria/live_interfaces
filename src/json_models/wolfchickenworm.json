@@ -1,0 +1,142 @@
+{
+    "name": "",
+    "notebook": {
+        "cells": [
+            {
+                "tag": "formal",
+                "id": "01959aaf-9f97-741c-b80c-950548aa2194",
+                "content": {
+                    "tag": "object",
+                    "id": "01959aaf-9f97-741c-b80c-93ad3f4425e2",
+                    "name": "wolves",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959aaf-e453-77aa-8fda-a552e9bcc5cd",
+                "content": {
+                    "tag": "object",
+                    "id": "01959aaf-e453-77aa-8fda-a1fbea4ff0a6",
+                    "name": "chickens",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959afb-c2dd-714d-aa11-b5734b48ed84",
+                "content": {
+                    "tag": "object",
+                    "id": "01959afb-c2dd-714d-aa11-b2a68104300b",
+                    "name": "worms",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959ab0-8d75-72c5-9b82-6fecc669b92f",
+                "content": {
+                    "tag": "morphism",
+                    "id": "01959ab0-8d75-72c5-9b82-690ecf134770",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Negative"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "01959aaf-9f97-741c-b80c-93ad3f4425e2"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "01959aaf-e453-77aa-8fda-a1fbea4ff0a6"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959ab0-dcac-7588-b156-3296c765117e",
+                "content": {
+                    "tag": "morphism",
+                    "id": "01959ab0-dcac-7588-b156-2fb7ac287286",
+                    "name": "",
+                    "morType": {
+                        "tag": "Hom",
+                        "content": {
+                            "tag": "Basic",
+                            "content": "Object"
+                        }
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "01959aaf-e453-77aa-8fda-a1fbea4ff0a6"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "01959aaf-9f97-741c-b80c-93ad3f4425e2"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959afb-e434-7072-9395-acf3d69fb9fc",
+                "content": {
+                    "tag": "morphism",
+                    "id": "01959afb-e434-7072-9395-a9fed9e80edc",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Negative"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "01959aaf-e453-77aa-8fda-a1fbea4ff0a6"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "01959afb-c2dd-714d-aa11-b2a68104300b"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959afc-4fc7-737d-b255-20beb06a96ce",
+                "content": {
+                    "tag": "morphism",
+                    "id": "01959afc-4fc7-737d-b255-1c497e97b7ce",
+                    "name": "",
+                    "morType": {
+                        "tag": "Hom",
+                        "content": {
+                            "tag": "Basic",
+                            "content": "Object"
+                        }
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "01959afb-c2dd-714d-aa11-b2a68104300b"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "01959aaf-e453-77aa-8fda-a1fbea4ff0a6"
+                    }
+                }
+            },
+            {
+                "tag": "stem",
+                "id": "01959ab5-41c2-77ec-9eb8-28f93dad8640"
+            }
+        ]
+    },
+    "theory": "causal-loop",
+    "type": "model"
+}
