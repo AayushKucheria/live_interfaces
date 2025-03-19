@@ -5,6 +5,7 @@ import { Info } from 'lucide-react';
 import { composePatterns } from './services/compositionEngine';
 import ComponentSandbox from './components/ComponentSandbox';
 import { getSourceCode, hasSourceCode } from './services/sourceCodeRegistry';
+import StyleCommandInterface from './components/StyleCommandInterface';
 
 function Demo() {
   const [selectedPatterns, setSelectedPatterns] = useState([]);
@@ -15,6 +16,7 @@ function Demo() {
   const [debugInfo, setDebugInfo] = useState(null);
   const [compositionSource, setCompositionSource] = useState(null);
   const [showingComposed, setShowingComposed] = useState(false);
+  const [selectedForStyle, setSelectedForStyle] = useState(null);
   
   // All available patterns from our library
   const allPatterns = Object.entries(Patterns)
@@ -41,6 +43,12 @@ function Demo() {
   }, {});
   
   const togglePattern = (patternId) => {
+    // Also set this pattern as selected for styling
+    const pattern = allPatterns.find(p => p.id === patternId);
+    if (pattern) {
+      setSelectedForStyle(pattern.id);
+    }
+    
     setSelectedPatterns(prev => {
       if (prev.includes(patternId)) {
         return prev.filter(id => id !== patternId);
@@ -300,72 +308,89 @@ ${JSON.stringify(pattern.metadata, null, 2)}
   };
   
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="min-h-screen flex">
-        {/* Main Content Area - Shows selected patterns */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-5xl mx-auto">
-            <h1 className="text-3xl font-medium mb-8">
-              {showingComposed ? 'Composed Pattern' : 'Interface Patterns'}
-            </h1>
-            
-            {showingComposed && composedComponent ? (
-              <>
-                <div className="mb-4">
-                  <button 
-                    onClick={() => setShowingComposed(false)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition-colors flex items-center"
-                  >
-                    <span className="mr-1">←</span> Back to individual patterns
-                  </button>
-                </div>
-                
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-blue-700">
-                    This component combines the insights from <strong>{compositionSource?.pattern1}</strong> and <strong>{compositionSource?.pattern2}</strong>
+    <div className="container mx-auto px-4 py-8 relative">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Interface Pattern Library</h1>
+        <p className="text-gray-600">Explore and compose UI patterns for better interfaces</p>
+      </header>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main content area - now on the left */}
+        <div className="lg:col-span-9">
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-5xl mx-auto">
+              <h1 className="text-3xl font-medium mb-8">
+                {showingComposed ? 'Composed Pattern' : 'Interface Patterns'}
+              </h1>
+              
+              {showingComposed && composedComponent ? (
+                <>
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setShowingComposed(false)}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition-colors flex items-center"
+                    >
+                      <span className="mr-1">←</span> Back to individual patterns
+                    </button>
+                  </div>
+                  
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-blue-700">
+                      This component combines the insights from <strong>{compositionSource?.pattern1}</strong> and <strong>{compositionSource?.pattern2}</strong>
+                    </p>
+                  </div>
+                  
+                  <PatternContainer
+                    pattern={composedComponent.component}
+                    metadata={composedComponent.metadata}
+                    example={composedComponent.example}
+                  />
+                  
+                  {compositionError && (
+                    <div className="mt-4 text-red-500 bg-red-50 p-3 rounded-lg">
+                      Composition Error: {compositionError}
+                    </div>
+                  )}
+                </>
+              ) : selectedPatterns.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm p-10 text-center">
+                  <p className="text-slate-600 text-lg">
+                    Select patterns from the sidebar to see them in action
                   </p>
                 </div>
-                
-                <PatternContainer
-                  pattern={composedComponent.component}
-                  metadata={composedComponent.metadata}
-                  example={composedComponent.example}
-                />
-                
-                {compositionError && (
-                  <div className="mt-4 text-red-500 bg-red-50 p-3 rounded-lg">
-                    Composition Error: {compositionError}
-                  </div>
-                )}
-              </>
-            ) : selectedPatterns.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm p-10 text-center">
-                <p className="text-slate-600 text-lg">
-                  Select patterns from the sidebar to see them in action
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {selectedPatterns.map(patternId => {
-                  const pattern = allPatterns.find(p => p.id === patternId);
-                  if (!pattern) return null;
-                  
-                  return (
-                    <PatternContainer
-                      key={patternId}
-                      pattern={pattern.component}
-                      metadata={pattern.metadata}
-                      example={pattern.example}
-                    />
-                  );
-                })}
-              </div>
-            )}
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {selectedPatterns.map(patternId => {
+                    const pattern = allPatterns.find(p => p.id === patternId);
+                    if (!pattern) return null;
+                    
+                    return (
+                      <div 
+                        key={patternId}
+                        className={`relative cursor-pointer ${selectedForStyle === patternId ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+                        onClick={() => setSelectedForStyle(patternId)}
+                      >
+                        {selectedForStyle === patternId && (
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10 bg-blue-500 text-white px-2 py-0.5 text-xs rounded-full">
+                            Selected for styling
+                          </div>
+                        )}
+                        <PatternContainer
+                          pattern={pattern.component}
+                          metadata={pattern.metadata}
+                          example={pattern.example}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
-        {/* Right Sidebar - Pattern Selection */}
-        <div className="w-80 bg-white shadow-sm overflow-y-auto p-4 flex-shrink-0">
+        {/* Right sidebar */}
+        <div className="lg:col-span-3 space-y-6">
           <h2 className="text-lg font-medium mb-4">Available Patterns</h2>
           
           {Object.entries(patternsByCategory).map(([category, patterns]) => (
@@ -393,6 +418,7 @@ ${JSON.stringify(pattern.metadata, null, 2)}
                             ? 'bg-blue-50 border-2 border-blue-300 shadow-sm'
                             : 'bg-slate-50 hover:bg-slate-100 border-2 border-transparent'
                         }
+                        ${selectedForStyle === pattern.id ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
                         ${isComposing ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
                       disabled={isComposing}
@@ -420,71 +446,71 @@ ${JSON.stringify(pattern.metadata, null, 2)}
               </div>
             </div>
           ))}
-        </div>
-        
-        {/* Pattern Info Modal */}
-        {infoPattern && (
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" 
-               onClick={() => setInfoPattern(null)}>
-            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 overflow-hidden" 
-                 onClick={e => e.stopPropagation()}>
-              <div className="p-6">
-                <h2 className="text-xl font-medium">{infoPattern.metadata.title}</h2>
-                <p className="mt-2 text-slate-600">{infoPattern.metadata.description}</p>
-              </div>
-              <div className="bg-slate-50 p-6 border-t">
-                <h3 className="text-sm font-medium text-slate-500 uppercase mb-3">Pattern Example</h3>
-                <div className="bg-white p-4 rounded-lg">
-                  {infoPattern.example ? 
-                    <infoPattern.example /> : 
-                    <infoPattern.component />
-                  }
-                </div>
-              </div>
-              <div className="p-4 bg-white border-t flex justify-end">
-                <button 
-                  onClick={() => setInfoPattern(null)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="fixed bottom-4 right-4 space-y-2">
-          <button 
-            onClick={() => {
-              if (selectedPatterns.length === 2) {
-                // Get the full pattern objects from the IDs
-                const pattern1 = allPatterns.find(p => p.id === selectedPatterns[0]);
-                const pattern2 = allPatterns.find(p => p.id === selectedPatterns[1]);
-                
-                // Pass the full pattern objects with their metadata
-                composeComponent(pattern1, pattern2);
-              }
-            }}
-            disabled={selectedPatterns.length !== 2 || isComposing}
-            className="bg-emerald-500 text-white px-4 py-2 rounded-lg disabled:opacity-50 relative"
-          >
-            {isComposing ? (
-              <>
-                <span className="inline-block animate-spin mr-2">🌀</span>
-                Composing...
-              </>
-            ) : (
-              `Compose Selected (${selectedPatterns.length}/2)`
-            )}
-          </button>
           
-          {compositionError && (
-            <div className="text-red-500 bg-red-50 p-3 rounded-lg">
-              Composition Error: {compositionError}
-            </div>
-          )}
+          {/* Compose button */}
+          <div className="mt-6">
+            <button 
+              onClick={() => {
+                if (selectedPatterns.length === 2) {
+                  // Get the full pattern objects from the IDs
+                  const pattern1 = allPatterns.find(p => p.id === selectedPatterns[0]);
+                  const pattern2 = allPatterns.find(p => p.id === selectedPatterns[1]);
+                  
+                  // Pass the full pattern objects with their metadata
+                  composeComponent(pattern1, pattern2);
+                }
+              }}
+              disabled={selectedPatterns.length !== 2 || isComposing}
+              className="w-full bg-emerald-500 text-white px-4 py-2 rounded-lg disabled:opacity-50 relative"
+            >
+              {isComposing ? (
+                <>
+                  <span className="inline-block animate-spin mr-2">🌀</span>
+                  Composing...
+                </>
+              ) : (
+                `Compose Selected (${selectedPatterns.length}/2)`
+              )}
+            </button>
+          </div>
         </div>
       </div>
+      
+      {/* Style Command Interface - Positioned at bottom center */}
+      <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-2xl">
+        <StyleCommandInterface selectedComponent={selectedForStyle} />
+      </div>
+      
+      {/* Pattern Info Modal */}
+      {infoPattern && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" 
+             onClick={() => setInfoPattern(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 overflow-hidden" 
+               onClick={e => e.stopPropagation()}>
+            <div className="p-6">
+              <h2 className="text-xl font-medium">{infoPattern.metadata.title}</h2>
+              <p className="mt-2 text-slate-600">{infoPattern.metadata.description}</p>
+            </div>
+            <div className="bg-slate-50 p-6 border-t">
+              <h3 className="text-sm font-medium text-slate-500 uppercase mb-3">Pattern Example</h3>
+              <div className="bg-white p-4 rounded-lg">
+                {infoPattern.example ? 
+                  <infoPattern.example /> : 
+                  <infoPattern.component />
+                }
+              </div>
+            </div>
+            <div className="p-4 bg-white border-t flex justify-end">
+              <button 
+                onClick={() => setInfoPattern(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
