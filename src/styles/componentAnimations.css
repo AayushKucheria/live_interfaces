@@ -1,0 +1,32 @@
+/* Component-specific animations and styles */
+
+/* Fade animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in forwards;
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-effect {
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Directional focus transitions */
+.directional-focus-transition {
+  transition: transform 0.2s ease-out, border-color 0.2s ease-in-out;
+}
+
+/* Encouragement message styling */
+.encouragement-message {
+  transition: opacity 0.3s ease-in-out;
+} 
