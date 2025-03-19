@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useComponentStyles } from '../../styles/StyleProvider';
 
 const encouragements = [
   "That's a great point!",
@@ -20,6 +21,7 @@ const EncouragementFeedback = ({
 }) => {
   const [encouragement, setEncouragement] = useState("");
   const [isVisible, setIsVisible] = useState(false);
+  const { styles } = useComponentStyles('EncouragementFeedback');
 
   useEffect(() => {
     if (!showEncouragement || !inputValue) {
@@ -38,13 +40,19 @@ const EncouragementFeedback = ({
     return () => clearTimeout(timer);
   }, [inputValue, showEncouragement, encouragementDelay]);
   
+  // Format the message content based on the template
+  const formatMessage = (message) => {
+    if (!styles.messageContent) return message;
+    return styles.messageContent.replace('$message', message);
+  };
+  
   return (
-    <div className={`encouragement-feedback-pattern ${className}`} {...props}>
+    <div className={`${styles.container} ${className}`} {...props}>
       {children}
       
       {isVisible && (
-        <div className="encouragement-message text-purple-500 italic text-sm mt-1 opacity-0 animate-fadeIn">
-          {encouragement}
+        <div className={styles.message}>
+          {formatMessage(encouragement)}
         </div>
       )}
     </div>
@@ -54,11 +62,11 @@ const EncouragementFeedback = ({
 // Attach metadata as a property
 EncouragementFeedback.metadata = {
   title: "Encouragement Feedback",
-  description: "Provides subtle encouragement and feedback while users write",
+  description: "Provides positive reinforcement as users interact with the interface",
   category: "creative"
 };
 
-// Example usage
+// Example usage for demo purposes
 EncouragementFeedback.Example = () => {
   const [inputValue, setInputValue] = useState("");
   
@@ -66,17 +74,17 @@ EncouragementFeedback.Example = () => {
     <div className="space-y-4">
       <EncouragementFeedback inputValue={inputValue}>
         <textarea
+          className="w-full p-3 border rounded-md"
+          placeholder="Start typing to see encouragement..."
+          rows={4}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Start writing something..."
-          className="w-full p-3 border border-slate-200 rounded-lg"
-          rows={4}
         />
       </EncouragementFeedback>
       
-      <p className="text-sm text-slate-500">
-        Type more than a few words to see encouragement appear
-      </p>
+      <div className="text-sm text-gray-500">
+        Type more than 10 characters to see encouragement
+      </div>
     </div>
   );
 };

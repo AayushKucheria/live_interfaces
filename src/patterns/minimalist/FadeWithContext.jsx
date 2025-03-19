@@ -1,17 +1,23 @@
 import React from 'react';
+import { useComponentStyles } from '../../styles/StyleProvider';
 
 const FadeWithContext = ({ entries = [], activeIndex = -1, className = "", ...props }) => {
+  // Use our style hook to get styles for this component
+  const { styles } = useComponentStyles('FadeWithContext');
+  
   return (
-    <div className={`fade-with-context-pattern ${className}`} {...props}>
+    <div className={`${styles.container} ${className}`} {...props}>
       {entries.map((entry, index) => {
         // Calculate opacity based on distance from active item
         const distance = Math.abs(index - activeIndex);
-        const opacity = activeIndex === -1 ? 1 : Math.max(0.3, 1 - (distance * 0.2));
+        const opacity = activeIndex === -1 ? 
+          styles.activeOpacity : 
+          Math.max(styles.inactiveOpacityBase, styles.activeOpacity - (distance * styles.opacityStep));
         
         return (
           <div 
             key={index}
-            className="transition-opacity duration-300 ease-in-out py-2"
+            className={styles.item}
             style={{ opacity }}
           >
             {entry}
