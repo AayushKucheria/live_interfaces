@@ -11,7 +11,14 @@ import { modelToMermaid, parseModelData } from '../utils/mermaidUtils';
  */
 const ModelVisualizer = ({ model, title, options = {} }) => {
   if (!model) {
-    return <div className="text-red-500">No model data provided</div>;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-gray-500 text-center">
+          <p className="mb-2 text-xl">No model selected</p>
+          <p className="text-sm">Please select a model from the sidebar</p>
+        </div>
+      </div>
+    );
   }
 
   // Parse model data if in CatCoLab format
@@ -37,24 +44,35 @@ const ModelVisualizer = ({ model, title, options = {} }) => {
   // Mermaid configuration
   const mermaidConfig = {
     theme: options.theme || 'neutral',
-    fontFamily: 'inherit',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
     flowchart: {
-      curve: 'linear',
-      htmlLabels: true
+      curve: 'basis',
+      htmlLabels: true,
+      padding: 15
     }
   };
   
   return (
-    <div className="model-visualizer">
+    <div className="model-visualizer h-full flex flex-col">
       {title && (
-        <h3 className="text-sm font-medium text-slate-700 mb-3">{title}</h3>
+        <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-6">
+          <h3 className="text-lg font-medium text-gray-700">{title}</h3>
+        </div>
       )}
-      <div className="relative border border-gray-200 rounded-lg p-4 bg-white">
-        <MermaidDiagram chart={mermaidCode} config={mermaidConfig} />
+      
+      <div className="flex-1 flex items-center justify-center overflow-auto">
+        <div className="relative max-w-full bg-white p-6 rounded-lg shadow-inner border border-gray-100">
+          <MermaidDiagram chart={mermaidCode} config={mermaidConfig} />
+        </div>
       </div>
+      
       {parsedModel.theory && (
-        <div className="mt-2 text-xs text-slate-500">
+        <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center justify-between">
           <p>This visualization represents a {parsedModel.theory} model.</p>
+          <div className="text-xs font-medium text-gray-400">
+            {Object.keys(parsedModel.objects || {}).length} objects • 
+            {Object.keys(parsedModel.morphisms || {}).length} morphisms
+          </div>
         </div>
       )}
     </div>

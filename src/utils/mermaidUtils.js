@@ -138,6 +138,52 @@ export function parseModelData(data) {
     };
   }
   
+  // Handle CatCoLab notebook format (json_models format)
+  if (data.notebook && data.notebook.cells) {
+    const objects = [];
+    const morphisms = [];
+    
+    // Process CatCoLab notebook cells
+    data.notebook.cells.forEach(cell => {
+      if (cell.tag === 'formal' && cell.content) {
+        // Extract objects
+        if (cell.content.tag === 'object') {
+          objects.push({
+            id: cell.content.id,
+            name: cell.content.name || 'Unnamed',
+            type: cell.content.obType?.content || 'Object'
+          });
+        }
+        // Extract morphisms
+        else if (cell.content.tag === 'morphism') {
+          const morphismType = 
+            cell.content.morType?.tag === 'Basic' && cell.content.morType.content === 'Negative' 
+              ? 'Negative' 
+              : 'Hom';
+          
+          const domId = cell.content.dom?.content;
+          const codId = cell.content.cod?.content;
+          
+          if (domId && codId) {
+            morphisms.push({
+              id: cell.content.id,
+              from: domId,
+              to: codId,
+              type: morphismType
+            });
+          }
+        }
+      }
+    });
+    
+    return {
+      type: data.type || 'model',
+      theory: data.theory || null,
+      objects,
+      morphisms
+    };
+  }
+  
   // Handle CatCoLab format (if different)
   if (data.nodes && data.edges) {
     return {
@@ -183,7 +229,7 @@ function sanitizeId(id) {
 
 /**
  * Finds an object by its ID in an array of objects
- * @param {Array} objects Array of objects to search
+ * @param {string} objects Array of objects to search
  * @param {string} id ID to search for
  * @returns {Object|null} The found object or null
  */

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import ModelVisualizer from './components/ModelVisualizer';
+import React, { useState } from 'react';
+import LoopyVisualizer from './components/LoopyVisualizer';
 import { Link } from 'react-router-dom';
 
 // Import JSON models from the json_models directory
@@ -14,13 +14,16 @@ const jsonModels = {
   'wormedwolves.json': wormedwolves
 };
 
-const Demo = () => {
+const LoopyDemo = () => {
   const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
   
   // Sidebar component for model selection
   const ModelSidebar = () => (
     <div className="bg-white rounded-lg shadow-md p-4 h-full">
-      <h3 className="text-lg font-semibold mb-4 text-gray-700">Available Models</h3>
+      <h3 className="text-lg font-semibold mb-4 text-gray-700">Convert CatCoLab Model</h3>
+      <p className="text-sm text-gray-600 mb-4">
+        Select a model to convert to Loopy format. This is experimental and may not represent all relations perfectly.
+      </p>
       <div className="space-y-2">
         {Object.keys(jsonModels).map((filename) => (
           <div 
@@ -36,23 +39,20 @@ const Demo = () => {
           </div>
         ))}
       </div>
-      
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <Link 
-          to="/loopy" 
-          className="block w-full py-2 px-4 bg-blue-500 text-white rounded text-center hover:bg-blue-600 transition-colors"
-        >
-          Try Loopy Visualizer
-        </Link>
-      </div>
     </div>
   );
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm px-6 py-3">
-        <h1 className="text-2xl font-bold text-gray-800">CatCoLab Model Visualizer</h1>
+      <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">CatCoLab Loopy Visualizer</h1>
+        <Link 
+          to="/" 
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Back to Mermaid View
+        </Link>
       </header>
       
       {/* Main content with sidebar layout */}
@@ -60,9 +60,9 @@ const Demo = () => {
         {/* Main visualization area */}
         <main className="flex-1 p-6 overflow-auto">
           <div className="bg-white rounded-lg shadow-md p-6 h-full">
-            <ModelVisualizer 
+            <LoopyVisualizer 
               model={jsonModels[selectedModel]} 
-              title="Model Visualization"
+              title="Loopy Interactive Model" 
             />
           </div>
         </main>
@@ -72,8 +72,16 @@ const Demo = () => {
           <ModelSidebar />
         </aside>
       </div>
+      
+      {/* Footer with info about Loopy */}
+      <footer className="bg-white shadow-inner px-6 py-3 text-sm text-gray-600">
+        <p>
+          Loopy is an interactive tool for creating causal loop diagrams. 
+          You can create nodes and arrows to model system dynamics.
+        </p>
+      </footer>
     </div>
   );
 };
 
-export default Demo;
+export default LoopyDemo; 
