@@ -1,0 +1,3 @@
+[submodule "public/loopy"]
+	path = public/loopy
+	url = https://github.com/ncase/loopy.git
