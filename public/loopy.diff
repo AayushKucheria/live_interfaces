@@ -1,0 +1,473 @@
+diff --git a/v1.1/css/loopy.css b/v1.1/css/loopy.css
+index 0f70fa7..d8647bb 100644
+--- a/v1.1/css/loopy.css
++++ b/v1.1/css/loopy.css
+@@ -35,8 +35,6 @@ canvas{
+ 	cursor: url('cursors/label.png') 15 15, auto;
+ }
+ 
+-
+-
+ /**********
+  PLAY CONTROLS
+ **********/
+@@ -143,6 +141,7 @@ div[big=yes] .play_button_label{
+ 	width: 300px;
+ 	height: 100%;
+ 	background: #ddd;
++	transition: width 0.3s ease-in-out;
+ 
+ 	font-weight: 100;
+ 	font-size: 17px;
+@@ -152,6 +151,41 @@ div[big=yes] .play_button_label{
+ 	-ms-user-select: none;
+ 	user-select: none;
+ }
++
++#sidebar.minimized {
++	width: 40px;
++	overflow: hidden;
++}
++
++#sidebar_toggle {
++	position: absolute;
++	top: 10px;
++	right: 10px;
++	width: 30px;
++	height: 30px;
++	background: #999;
++	color: #fff;
++	border-radius: 50%;
++	display: flex;
++	align-items: center;
++	justify-content: center;
++	font-size: 20px;
++	cursor: pointer;
++	z-index: 10;
++}
++
++#sidebar_toggle:hover {
++	background: #888;
++}
++
++#sidebar.minimized #sidebar_toggle {
++	right: 5px;
++}
++
++#canvasses.sidebar-minimized {
++	width: calc(100% - 40px);
++}
++
+ #sidebar > div{
+ 	margin: 25px;
+ }
+diff --git a/v1.1/js/Loopy.js b/v1.1/js/Loopy.js
+index 0f688c6..231c27c 100644
+--- a/v1.1/js/Loopy.js
++++ b/v1.1/js/Loopy.js
+@@ -64,8 +64,110 @@ function Loopy(config){
+ 
+ 	self.init = function(){
+ 		self.loadFromURL(); // try it.
++		
++		// Notify parent window that Loopy is ready
++		try {
++			window.parent.postMessage({ type: 'loopy_ready' }, '*');
++		} catch (e) {
++			console.log('Error sending ready message:', e);
++		}
++		
++		// Add a listener for messages from the parent window
++		window.addEventListener('message', function(event) {
++			// Check for model data from parent
++			if (event.data && event.data.action === 'load' && event.data.data) {
++				try {
++					var modelData = JSON.parse(event.data.data);
++					self.loadExternalModel(modelData);
++				} catch (e) {
++					console.error('Error loading external model:', e);
++				}
++			}
++		});
++	};
++
++	// Load model from external data format
++	self.loadExternalModel = function(modelData) {
++		try {
++			// Reset everything
++			publish("model/reset");
++			self.model.clear();
++			self.model.edges = [];
++			
++			// Convert our model format to Loopy's serialized format
++			const loopyFormat = convertToLoopyFormat(modelData);
++			
++			// Use Loopy's own deserialization which properly handles object creation
++			self.model.deserialize(loopyFormat);
++			
++			// Switch to play mode
++			self.setMode(Loopy.MODE_PLAY);
++			
++		} catch (error) {
++			console.error("Critical error in loadExternalModel:", error);
++		}
+ 	};
+ 
++	// Helper function to convert our model format to Loopy's serialized format
++	function convertToLoopyFormat(model) {
++		try {
++			// Create arrays for nodes, edges, and labels
++			const nodes = [];
++			const edges = [];
++			const labels = [];
++			
++			// Process nodes
++			if (model.nodes && Array.isArray(model.nodes)) {
++				for (let i = 0; i < model.nodes.length; i++) {
++					const node = model.nodes[i];
++					// Format: [id, x, y, init, label, hue]
++					nodes.push([
++						i+1, // Loopy uses 1-based IDs
++						node.x,
++						node.y,
++						1, // init value
++						encodeURIComponent(node.name || ""),
++						node.hue || 0
++					]);
++				}
++			}
++			
++			// Process edges
++			if (model.edges && Array.isArray(model.edges)) {
++				for (let i = 0; i < model.edges.length; i++) {
++					const edge = model.edges[i];
++					// Format: [from_id, to_id, arc, strength, rotation]
++					edges.push([
++						edge.from + 1, // convert to 1-based IDs
++						edge.to + 1,   // convert to 1-based IDs
++						edge.arc || 0,
++						edge.strength || 1,
++						0 // rotation
++					]);
++				}
++			}
++			
++			// Process labels
++			if (model.labels && Array.isArray(model.labels)) {
++				for (let i = 0; i < model.labels.length; i++) {
++					const label = model.labels[i];
++					// Format: [x, y, text]
++					labels.push([
++						label.x,
++						label.y,
++						encodeURIComponent(label.text || "")
++					]);
++				}
++			}
++			
++			// Return serialized format: [nodes, edges, labels, mode]
++			return JSON.stringify([nodes, edges, labels, Loopy.MODE_PLAY]);
++		} catch (error) {
++			console.error("Error converting to Loopy format:", error);
++			return "[]";
++		}
++	}
++
+ 	///////////////////
+ 	// UPDATE & DRAW //
+ 	///////////////////
+diff --git a/v1.1/js/Model.js b/v1.1/js/Model.js
+index 0096c3e..c9a5bee 100644
+--- a/v1.1/js/Model.js
++++ b/v1.1/js/Model.js
+@@ -542,4 +542,16 @@ function Model(loopy){
+ 
+ 	};
+ 
++	// Update size whenever window changes
++	var _onResize = function(){
++		var sidebar = document.getElementById("sidebar");
++		if(!loopy.embedded){
++			self.canvas.width = document.body.clientWidth - sidebar.clientWidth;
++		}else{
++			self.canvas.width = document.body.clientWidth;
++		}
++		self.canvas.height = document.body.clientHeight;
++		publish("resize");
++	};
++
+ }
+\ No newline at end of file
+diff --git a/v1.1/js/Mouse.js b/v1.1/js/Mouse.js
+index a9917a2..e80228c 100644
+--- a/v1.1/js/Mouse.js
++++ b/v1.1/js/Mouse.js
+@@ -56,9 +56,58 @@ Mouse.init = function(target){
+ 		Mouse.moved = false;
+ 		Mouse.startedOnTarget = false;
+ 	};
++	
++	// Zoom functionality with mouse wheel
++	var _onmousewheel = function(event){
++		event.preventDefault();
++		
++		// Calculate zoom factor - negative delta means zoom in
++		var zoomFactor = event.deltaY < 0 ? 1.1 : 0.9;
++		
++		// Get mouse position before zoom
++		var canvasses = document.getElementById("canvasses");
++		var rect = canvasses.getBoundingClientRect();
++		var mouseX = event.clientX - rect.left;
++		var mouseY = event.clientY - rect.top;
++		
++		// Get current scale and calculate new scale
++		var oldScale = loopy.offsetScale;
++		var newScale = oldScale * zoomFactor;
++		
++		// Clamp scale between 0.25 and 3
++		newScale = Math.max(0.25, Math.min(3, newScale));
++		
++		if (newScale !== oldScale) {
++			// Calculate how coordinates will change after scale
++			// This compensates the zoom to focus on mouse position
++			var CW = canvasses.clientWidth - _PADDING - _PADDING;
++			var CH = canvasses.clientHeight - _PADDING_BOTTOM - _PADDING;
++			
++			// Convert mouse to model coordinates before zoom
++			var mouseModelX = (mouseX - CW/2) / oldScale + CW/2 - loopy.offsetX;
++			var mouseModelY = (mouseY - CH/2) / oldScale + CH/2 - loopy.offsetY;
++			
++			// Apply scale
++			loopy.offsetScale = newScale;
++			
++			// Calculate required offset to keep mouse at same model position
++			var dx = (mouseX - CW/2) * (1/oldScale - 1/newScale);
++			var dy = (mouseY - CH/2) * (1/oldScale - 1/newScale);
++			
++			// Apply offset
++			loopy.offsetX += dx;
++			loopy.offsetY += dy;
++			
++			// Force redraw
++			publish("model/changed");
++		}
++	};
+ 
+ 	// Add mouse & touch events!
+ 	_addMouseEvents(target, _onmousedown, _onmousemove, _onmouseup);
++	
++	// Add wheel event for zooming
++	target.addEventListener("wheel", _onmousewheel, { passive: false });
+ 
+ 	// Cursor & Update
+ 	Mouse.target = target;
+diff --git a/v1.1/js/Sidebar.js b/v1.1/js/Sidebar.js
+index c5cf1f7..bb6337c 100644
+--- a/v1.1/js/Sidebar.js
++++ b/v1.1/js/Sidebar.js
+@@ -9,6 +9,37 @@ function Sidebar(loopy){
+ 	var self = this;
+ 	PageUI.call(self, document.getElementById("sidebar"));
+ 
++	// Create toggle button
++	self.toggleButton = document.createElement("div");
++	self.toggleButton.id = "sidebar_toggle";
++	self.toggleButton.innerHTML = ">";
++	self.toggleButton.onclick = function() {
++		self.toggleMinimized();
++	};
++	self.dom.appendChild(self.toggleButton);
++	
++	// Minimized state
++	self.isMinimized = false;
++	
++	// Toggle minimized state
++	self.toggleMinimized = function() {
++		self.isMinimized = !self.isMinimized;
++		
++		// Update classes
++		if (self.isMinimized) {
++			self.dom.classList.add("minimized");
++			document.getElementById("canvasses").classList.add("sidebar-minimized");
++			self.toggleButton.innerHTML = "<";
++		} else {
++			self.dom.classList.remove("minimized");
++			document.getElementById("canvasses").classList.remove("sidebar-minimized");
++			self.toggleButton.innerHTML = ">";
++		}
++		
++		// Resize event
++		publish("resize");
++	};
++
+ 	// Edit
+ 	self.edit = function(object){
+ 		self.showPage(object._CLASS_);
+diff --git a/v1/css/loopy.css b/v1/css/loopy.css
+index 0f70fa7..d8647bb 100644
+--- a/v1/css/loopy.css
++++ b/v1/css/loopy.css
+@@ -35,8 +35,6 @@ canvas{
+ 	cursor: url('cursors/label.png') 15 15, auto;
+ }
+ 
+-
+-
+ /**********
+  PLAY CONTROLS
+ **********/
+@@ -143,6 +141,7 @@ div[big=yes] .play_button_label{
+ 	width: 300px;
+ 	height: 100%;
+ 	background: #ddd;
++	transition: width 0.3s ease-in-out;
+ 
+ 	font-weight: 100;
+ 	font-size: 17px;
+@@ -152,6 +151,41 @@ div[big=yes] .play_button_label{
+ 	-ms-user-select: none;
+ 	user-select: none;
+ }
++
++#sidebar.minimized {
++	width: 40px;
++	overflow: hidden;
++}
++
++#sidebar_toggle {
++	position: absolute;
++	top: 10px;
++	right: 10px;
++	width: 30px;
++	height: 30px;
++	background: #999;
++	color: #fff;
++	border-radius: 50%;
++	display: flex;
++	align-items: center;
++	justify-content: center;
++	font-size: 20px;
++	cursor: pointer;
++	z-index: 10;
++}
++
++#sidebar_toggle:hover {
++	background: #888;
++}
++
++#sidebar.minimized #sidebar_toggle {
++	right: 5px;
++}
++
++#canvasses.sidebar-minimized {
++	width: calc(100% - 40px);
++}
++
+ #sidebar > div{
+ 	margin: 25px;
+ }
+diff --git a/v1/js/Mouse.js b/v1/js/Mouse.js
+index a9917a2..e80228c 100644
+--- a/v1/js/Mouse.js
++++ b/v1/js/Mouse.js
+@@ -56,9 +56,58 @@ Mouse.init = function(target){
+ 		Mouse.moved = false;
+ 		Mouse.startedOnTarget = false;
+ 	};
++	
++	// Zoom functionality with mouse wheel
++	var _onmousewheel = function(event){
++		event.preventDefault();
++		
++		// Calculate zoom factor - negative delta means zoom in
++		var zoomFactor = event.deltaY < 0 ? 1.1 : 0.9;
++		
++		// Get mouse position before zoom
++		var canvasses = document.getElementById("canvasses");
++		var rect = canvasses.getBoundingClientRect();
++		var mouseX = event.clientX - rect.left;
++		var mouseY = event.clientY - rect.top;
++		
++		// Get current scale and calculate new scale
++		var oldScale = loopy.offsetScale;
++		var newScale = oldScale * zoomFactor;
++		
++		// Clamp scale between 0.25 and 3
++		newScale = Math.max(0.25, Math.min(3, newScale));
++		
++		if (newScale !== oldScale) {
++			// Calculate how coordinates will change after scale
++			// This compensates the zoom to focus on mouse position
++			var CW = canvasses.clientWidth - _PADDING - _PADDING;
++			var CH = canvasses.clientHeight - _PADDING_BOTTOM - _PADDING;
++			
++			// Convert mouse to model coordinates before zoom
++			var mouseModelX = (mouseX - CW/2) / oldScale + CW/2 - loopy.offsetX;
++			var mouseModelY = (mouseY - CH/2) / oldScale + CH/2 - loopy.offsetY;
++			
++			// Apply scale
++			loopy.offsetScale = newScale;
++			
++			// Calculate required offset to keep mouse at same model position
++			var dx = (mouseX - CW/2) * (1/oldScale - 1/newScale);
++			var dy = (mouseY - CH/2) * (1/oldScale - 1/newScale);
++			
++			// Apply offset
++			loopy.offsetX += dx;
++			loopy.offsetY += dy;
++			
++			// Force redraw
++			publish("model/changed");
++		}
++	};
+ 
+ 	// Add mouse & touch events!
+ 	_addMouseEvents(target, _onmousedown, _onmousemove, _onmouseup);
++	
++	// Add wheel event for zooming
++	target.addEventListener("wheel", _onmousewheel, { passive: false });
+ 
+ 	// Cursor & Update
+ 	Mouse.target = target;
+diff --git a/v1/js/Sidebar.js b/v1/js/Sidebar.js
+index 6ab5763..04e595c 100644
+--- a/v1/js/Sidebar.js
++++ b/v1/js/Sidebar.js
+@@ -9,6 +9,37 @@ function Sidebar(loopy){
+ 	var self = this;
+ 	PageUI.call(self, document.getElementById("sidebar"));
+ 
++	// Create toggle button
++	self.toggleButton = document.createElement("div");
++	self.toggleButton.id = "sidebar_toggle";
++	self.toggleButton.innerHTML = ">";
++	self.toggleButton.onclick = function() {
++		self.toggleMinimized();
++	};
++	self.dom.appendChild(self.toggleButton);
++	
++	// Minimized state
++	self.isMinimized = false;
++	
++	// Toggle minimized state
++	self.toggleMinimized = function() {
++		self.isMinimized = !self.isMinimized;
++		
++		// Update classes
++		if (self.isMinimized) {
++			self.dom.classList.add("minimized");
++			document.getElementById("canvasses").classList.add("sidebar-minimized");
++			self.toggleButton.innerHTML = "<";
++		} else {
++			self.dom.classList.remove("minimized");
++			document.getElementById("canvasses").classList.remove("sidebar-minimized");
++			self.toggleButton.innerHTML = ">";
++		}
++		
++		// Resize event
++		publish("resize");
++	};
++
+ 	// Edit
+ 	self.edit = function(object){
+ 		self.showPage(object._CLASS_);
