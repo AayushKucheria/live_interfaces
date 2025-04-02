@@ -7,12 +7,36 @@ import { modelToMermaid, parseModelData } from './utils/mermaidUtils';
 import wolfchickens from './json_models/wolfchickens.json';
 import wolfchickenworm from './json_models/wolfchickenworm.json';
 import wormedwolves from './json_models/wormedwolves.json';
+import causalLoopJson from './json_models/causal-loop-json.json';
+import teamDynamics from './json_models/team_dynamics.json';
+import conflictResolution from './json_models/conflict_resolution.json';
+import mediationDynamics from './json_models/mediation_dynamics.json';
+import communicationPathways from './json_models/communication_pathways.json';
+import tensionEscalation from './json_models/tension_escalation.json';
+import peaceBuilding from './json_models/peace_building.json';
+import trustBuilding from './json_models/trust_building.json';
+import emotionalIntelligence from './json_models/emotional_intelligence.json';
+import socialSupport from './json_models/social_support.json';
+import communicationQuality from './json_models/communication_quality.json';
+import boundaryDynamics from './json_models/boundary_dynamics.json';
 
 // Create a models object using the original file names
 const jsonModels = {
   'wolfchickens.json': wolfchickens,
   'wolfchickenworm.json': wolfchickenworm,
-  'wormedwolves.json': wormedwolves
+  'wormedwolves.json': wormedwolves,
+  'causal-loop-json.json': causalLoopJson,
+  'team_dynamics.json': teamDynamics,
+  'conflict_resolution.json': conflictResolution,
+  'mediation_dynamics.json': mediationDynamics,
+  'communication_pathways.json': communicationPathways,
+  'tension_escalation.json': tensionEscalation,
+  'peace_building.json': peaceBuilding,
+  'trust_building.json': trustBuilding,
+  'emotional_intelligence.json': emotionalIntelligence,
+  'social_support.json': socialSupport,
+  'communication_quality.json': communicationQuality,
+  'boundary_dynamics.json': boundaryDynamics
 };
 
 // Modal component for displaying the larger Mermaid diagram
@@ -171,6 +195,18 @@ const UnifiedInterface = () => {
       'wolfchickens.json': 'A simple predator-prey relationship model between wolves and chickens.',
       'wolfchickenworm.json': 'An ecosystem model with wolves, chickens, and worms interactions.',
       'wormedwolves.json': 'A parasitic relationship model between worms and wolves.',
+      'causal-loop-json.json': 'A general causal loop diagram model example.',
+      'team_dynamics.json': 'A model exploring relationships in team environments.',
+      'conflict_resolution.json': 'A model showing the process of resolving conflicts.',
+      'mediation_dynamics.json': 'A model of mediation processes in conflict resolution.',
+      'communication_pathways.json': 'A model showing communication flows between entities.',
+      'tension_escalation.json': 'A model demonstrating how conflicts escalate over time.',
+      'peace_building.json': 'A model of processes that contribute to sustainable peace.',
+      'trust_building.json': 'A model showing factors that build trust in relationships.',
+      'emotional_intelligence.json': 'A model exploring components of emotional intelligence.',
+      'social_support.json': 'A model of social support networks and their effects.',
+      'communication_quality.json': 'A model of factors affecting communication quality.',
+      'boundary_dynamics.json': 'A model showing boundary-setting in relationships.'
     };
     
     return descriptions[filename] || 'A causal loop diagram model.';
@@ -179,9 +215,9 @@ const UnifiedInterface = () => {
   // Sidebar component for model selection with Mermaid visualizations
   const ModelSidebar = () => {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4 h-full overflow-auto">
+      <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col overflow-hidden">
         <h3 className="text-lg font-semibold mb-4 text-gray-700">Available Models</h3>
-        <div className="space-y-6">
+        <div className="space-y-6 flex-1 overflow-y-auto pr-2">
           {Object.keys(jsonModels).map((filename) => {
             const model = jsonModels[filename];
             const isSelected = selectedModel === filename;
@@ -198,7 +234,7 @@ const UnifiedInterface = () => {
                   isSelected 
                     ? 'ring-2 ring-blue-500' 
                     : 'hover:bg-blue-50'
-                }`}
+                } mb-4`}
               >
                 <div className="p-3 border-b border-gray-200">
                   <p className="font-medium text-gray-900">{displayName}</p>

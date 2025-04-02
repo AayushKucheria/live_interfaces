@@ -1,0 +1,149 @@
+{
+    "name": "Communication Pathways Model",
+    "notebook": {
+        "cells": [
+            {
+                "tag": "formal",
+                "id": "03959aaf-9f97-741c-b80c-950548aa2197",
+                "content": {
+                    "tag": "object",
+                    "id": "03959aaf-9f97-741c-b80c-93ad3f4425e5",
+                    "name": "open dialogue",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "03959aaf-e453-77aa-8fda-a552e9bcc5cg",
+                "content": {
+                    "tag": "object",
+                    "id": "03959aaf-e453-77aa-8fda-a1fbea4ff0a9",
+                    "name": "mutual understanding",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "03959afb-c2dd-714d-aa11-b5734b48ed87",
+                "content": {
+                    "tag": "object",
+                    "id": "03959afb-c2dd-714d-aa11-b2a68104300e",
+                    "name": "empathy",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "03959afb-e434-7072-9395-acf3d69fb9fd",
+                "content": {
+                    "tag": "object",
+                    "id": "03959afb-e434-7072-9395-a9fed9e80edd",
+                    "name": "reduced tension",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "03959ab0-8d75-72c5-9b82-6fecc669b932",
+                "content": {
+                    "tag": "morphism",
+                    "id": "03959ab0-8d75-72c5-9b82-690ecf134773",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "03959aaf-9f97-741c-b80c-93ad3f4425e5"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "03959aaf-e453-77aa-8fda-a1fbea4ff0a9"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "03959ab0-dcac-7588-b156-3296c765118h",
+                "content": {
+                    "tag": "morphism",
+                    "id": "03959ab0-dcac-7588-b156-2fb7ac287289",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "03959aaf-e453-77aa-8fda-a1fbea4ff0a9"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "03959afb-c2dd-714d-aa11-b2a68104300e"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "03959afc-4fc7-737d-b255-20beb06a96dh",
+                "content": {
+                    "tag": "morphism",
+                    "id": "03959afc-4fc7-737d-b255-1c497e97b7d2",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "03959afb-c2dd-714d-aa11-b2a68104300e"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "03959afb-e434-7072-9395-a9fed9e80edd"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "03959afc-4fc7-737d-b255-20beb06a96di",
+                "content": {
+                    "tag": "morphism",
+                    "id": "03959afc-4fc7-737d-b255-1c497e97b7d3",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "03959aaf-9f97-741c-b80c-93ad3f4425e5"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "03959afb-e434-7072-9395-a9fed9e80edd"
+                    }
+                }
+            },
+            {
+                "tag": "stem",
+                "id": "03959aaf-9f97-741c-b80c-93ad3f4425e5"
+            }
+        ]
+    },
+    "theory": "causal-loop",
+    "type": "model"
+} 

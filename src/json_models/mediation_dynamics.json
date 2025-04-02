@@ -1,0 +1,115 @@
+{
+    "name": "Mediation Dynamics Model",
+    "notebook": {
+        "cells": [
+            {
+                "tag": "formal",
+                "id": "02959aaf-9f97-741c-b80c-950548aa2196",
+                "content": {
+                    "tag": "object",
+                    "id": "02959aaf-9f97-741c-b80c-93ad3f4425e4",
+                    "name": "third-party mediator",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "02959aaf-e453-77aa-8fda-a552e9bcc5cf",
+                "content": {
+                    "tag": "object",
+                    "id": "02959aaf-e453-77aa-8fda-a1fbea4ff0a8",
+                    "name": "common ground",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "02959afb-c2dd-714d-aa11-b5734b48ed86",
+                "content": {
+                    "tag": "object",
+                    "id": "02959afb-c2dd-714d-aa11-b2a68104300d",
+                    "name": "agreement",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "02959ab0-8d75-72c5-9b82-6fecc669b931",
+                "content": {
+                    "tag": "morphism",
+                    "id": "02959ab0-8d75-72c5-9b82-690ecf134772",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "02959aaf-9f97-741c-b80c-93ad3f4425e4"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "02959aaf-e453-77aa-8fda-a1fbea4ff0a8"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "02959ab0-dcac-7588-b156-3296c765118g",
+                "content": {
+                    "tag": "morphism",
+                    "id": "02959ab0-dcac-7588-b156-2fb7ac287288",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "02959aaf-e453-77aa-8fda-a1fbea4ff0a8"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "02959afb-c2dd-714d-aa11-b2a68104300d"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "02959afc-4fc7-737d-b255-20beb06a96dg",
+                "content": {
+                    "tag": "morphism",
+                    "id": "02959afc-4fc7-737d-b255-1c497e97b7d1",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "02959aaf-9f97-741c-b80c-93ad3f4425e4"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "02959afb-c2dd-714d-aa11-b2a68104300d"
+                    }
+                }
+            },
+            {
+                "tag": "stem",
+                "id": "02959aaf-9f97-741c-b80c-93ad3f4425e4"
+            }
+        ]
+    },
+    "theory": "causal-loop",
+    "type": "model"
+} 

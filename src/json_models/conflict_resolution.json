@@ -1,0 +1,115 @@
+{
+    "name": "Conflict Resolution Model",
+    "notebook": {
+        "cells": [
+            {
+                "tag": "formal",
+                "id": "01959aaf-9f97-741c-b80c-950548aa2195",
+                "content": {
+                    "tag": "object",
+                    "id": "01959aaf-9f97-741c-b80c-93ad3f4425e3",
+                    "name": "active listening",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959aaf-e453-77aa-8fda-a552e9bcc5ce",
+                "content": {
+                    "tag": "object",
+                    "id": "01959aaf-e453-77aa-8fda-a1fbea4ff0a7",
+                    "name": "compromise",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959afb-c2dd-714d-aa11-b5734b48ed85",
+                "content": {
+                    "tag": "object",
+                    "id": "01959afb-c2dd-714d-aa11-b2a68104300c",
+                    "name": "resolution",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959ab0-8d75-72c5-9b82-6fecc669b930",
+                "content": {
+                    "tag": "morphism",
+                    "id": "01959ab0-8d75-72c5-9b82-690ecf134771",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "01959aaf-9f97-741c-b80c-93ad3f4425e3"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "01959aaf-e453-77aa-8fda-a1fbea4ff0a7"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959ab0-dcac-7588-b156-3296c765117f",
+                "content": {
+                    "tag": "morphism",
+                    "id": "01959ab0-dcac-7588-b156-2fb7ac287287",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "01959aaf-e453-77aa-8fda-a1fbea4ff0a7"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "01959afb-c2dd-714d-aa11-b2a68104300c"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "01959afc-4fc7-737d-b255-20beb06a96cf",
+                "content": {
+                    "tag": "morphism",
+                    "id": "01959afc-4fc7-737d-b255-1c497e97b7d0",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "01959aaf-9f97-741c-b80c-93ad3f4425e3"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "01959afb-c2dd-714d-aa11-b2a68104300c"
+                    }
+                }
+            },
+            {
+                "tag": "stem",
+                "id": "01959aaf-9f97-741c-b80c-93ad3f4425e3"
+            }
+        ]
+    },
+    "theory": "causal-loop",
+    "type": "model"
+} 

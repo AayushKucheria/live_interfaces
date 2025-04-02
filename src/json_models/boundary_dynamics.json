@@ -1,0 +1,225 @@
+{
+    "name": "Boundary Dynamics Model",
+    "notebook": {
+        "cells": [
+            {
+                "tag": "formal",
+                "id": "10959aaf-9f97-741c-b80c-950548aa2204",
+                "content": {
+                    "tag": "object",
+                    "id": "10959aaf-9f97-741c-b80c-93ad3f4425ec",
+                    "name": "boundary setting",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959aaf-e453-77aa-8fda-a552e9bcc5cn",
+                "content": {
+                    "tag": "object",
+                    "id": "10959aaf-e453-77aa-8fda-a1fbea4ff0ag",
+                    "name": "boundary respect",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959afb-c2dd-714d-aa11-b5734b48ed94",
+                "content": {
+                    "tag": "object",
+                    "id": "10959afb-c2dd-714d-aa11-b2a6810430g5",
+                    "name": "personal autonomy",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959afb-e434-7072-9395-acf3d69fb9fn",
+                "content": {
+                    "tag": "object",
+                    "id": "10959afb-e434-7072-9395-a9fed9e80edn",
+                    "name": "relationship health",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959afb-e434-7072-9395-acf3d69fb9fo",
+                "content": {
+                    "tag": "object",
+                    "id": "10959afb-e434-7072-9395-a9fed9e80edo",
+                    "name": "boundary violation",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959ab0-8d75-72c5-9b82-6fecc669b939",
+                "content": {
+                    "tag": "morphism",
+                    "id": "10959ab0-8d75-72c5-9b82-690ecf13477a",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "10959aaf-9f97-741c-b80c-93ad3f4425ec"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "10959afb-c2dd-714d-aa11-b2a6810430g5"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959ab0-dcac-7588-b156-3296c765118o",
+                "content": {
+                    "tag": "morphism",
+                    "id": "10959ab0-dcac-7588-b156-2fb7ac28728g",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "10959aaf-e453-77aa-8fda-a1fbea4ff0ag"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "10959afb-e434-7072-9395-a9fed9e80edn"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959afc-4fc7-737d-b255-20beb06a96e2",
+                "content": {
+                    "tag": "morphism",
+                    "id": "10959afc-4fc7-737d-b255-1c497e97b7dn",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "10959aaf-9f97-741c-b80c-93ad3f4425ec"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "10959aaf-e453-77aa-8fda-a1fbea4ff0ag"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959afc-4fc7-737d-b255-20beb06a96e3",
+                "content": {
+                    "tag": "morphism",
+                    "id": "10959afc-4fc7-737d-b255-1c497e97b7do",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Negative"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "10959aaf-e453-77aa-8fda-a1fbea4ff0ag"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "10959afb-e434-7072-9395-a9fed9e80edo"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959afc-4fc7-737d-b255-20beb06a96e4",
+                "content": {
+                    "tag": "morphism",
+                    "id": "10959afc-4fc7-737d-b255-1c497e97b7dp",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Negative"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "10959afb-e434-7072-9395-a9fed9e80edo"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "10959afb-e434-7072-9395-a9fed9e80edn"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959afc-4fc7-737d-b255-20beb06a96e5",
+                "content": {
+                    "tag": "morphism",
+                    "id": "10959afc-4fc7-737d-b255-1c497e97b7dq",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "10959afb-c2dd-714d-aa11-b2a6810430g5"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "10959afb-e434-7072-9395-a9fed9e80edn"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "10959afc-4fc7-737d-b255-20beb06a96e6",
+                "content": {
+                    "tag": "morphism",
+                    "id": "10959afc-4fc7-737d-b255-1c497e97b7dr",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Negative"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "10959afb-e434-7072-9395-a9fed9e80edo"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "10959afb-c2dd-714d-aa11-b2a6810430g5"
+                    }
+                }
+            },
+            {
+                "tag": "stem",
+                "id": "10959aaf-9f97-741c-b80c-93ad3f4425ec"
+            }
+        ]
+    },
+    "theory": "causal-loop",
+    "type": "model"
+} 
