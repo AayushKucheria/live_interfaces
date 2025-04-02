@@ -20,7 +20,8 @@ export function causalModelToMermaid(model) {
   // Add nodes
   objects.forEach(obj => {
     // Create node with ID and label - simplified styling
-    mermaidCode += `  ${sanitizeId(obj.id)}["${obj.name}"]\n`;
+    const safeId = sanitizeId(obj.id);
+    mermaidCode += `  ${safeId}["${obj.name}"]\n`;
   });
   
   // Add relationships with simple syntax
@@ -60,7 +61,8 @@ export function ecosystemModelToMermaid(model) {
   
   // Add nodes - simplified without colors
   objects.forEach(obj => {
-    mermaidCode += `  ${sanitizeId(obj.id)}["${obj.name}"]\n`;
+    const safeId = sanitizeId(obj.id);
+    mermaidCode += `  ${safeId}["${obj.name}"]\n`;
   });
   
   // Add relationships with very simple styling
@@ -149,7 +151,7 @@ export function parseModelData(data) {
         // Extract objects
         if (cell.content.tag === 'object') {
           objects.push({
-            id: cell.content.id,
+            id: sanitizeId(cell.content.id),
             name: cell.content.name || 'Unnamed',
             type: cell.content.obType?.content || 'Object'
           });
@@ -166,9 +168,9 @@ export function parseModelData(data) {
           
           if (domId && codId) {
             morphisms.push({
-              id: cell.content.id,
-              from: domId,
-              to: codId,
+              id: sanitizeId(cell.content.id),
+              from: sanitizeId(domId),
+              to: sanitizeId(codId),
               type: morphismType
             });
           }
@@ -190,13 +192,13 @@ export function parseModelData(data) {
       type: data.type || 'causal',
       theory: data.theory || null,
       objects: data.nodes.map(node => ({
-        id: node.id || `node_${Math.random().toString(36).substr(2, 9)}`,
+        id: sanitizeId(node.id || `node_${Math.random().toString(36).substr(2, 9)}`),
         name: node.label || node.name || node.id || 'Unnamed',
       })),
       morphisms: data.edges.map(edge => ({
-        id: edge.id || `${edge.source}_to_${edge.target}`,
-        from: edge.source || edge.from,
-        to: edge.target || edge.to,
+        id: sanitizeId(edge.id || `${edge.source}_to_${edge.target}`),
+        from: sanitizeId(edge.source || edge.from),
+        to: sanitizeId(edge.target || edge.to),
         type: edge.relationship === 'negative' ? 'Negative' : 'Hom'
       }))
     };
@@ -208,7 +210,7 @@ export function parseModelData(data) {
     type: 'causal',
     theory: null,
     objects: Object.keys(data).filter(key => typeof data[key] === 'object').map(key => ({
-      id: key,
+      id: sanitizeId(key),
       name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
     })),
     morphisms: []
@@ -224,7 +226,7 @@ function sanitizeId(id) {
   if (!id) return 'unknown';
   
   // Replace any special characters that might conflict with mermaid syntax
-  return id.replace(/[^\w]/g, '_');
+  return String(id).replace(/[^\w]/g, '_');
 }
 
 /**

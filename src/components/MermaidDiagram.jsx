@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mermaid from 'mermaid';
 
 // Initialize mermaid with improved configuration
@@ -20,10 +20,11 @@ mermaid.initialize({
  * @param {Object} props Component props
  * @param {string} props.chart The mermaid diagram definition
  * @param {Object} props.config Optional mermaid configuration overrides
+ * @param {boolean} props.compact Whether to render in compact mode for sidebar
  */
-const MermaidDiagram = ({ chart, config = {} }) => {
+const MermaidDiagram = ({ chart, config = {}, compact = false }) => {
   const mermaidRef = useRef(null);
-  const uniqueId = `mermaid-${Math.random().toString(36).substring(2, 11)}`;
+  const chartRef = useRef(chart); // Track chart changes
   const [scale, setScale] = useState(1);
   const [error, setError] = useState(null);
 
@@ -31,47 +32,93 @@ const MermaidDiagram = ({ chart, config = {} }) => {
   const zoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
   const zoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.5));
   const resetZoom = () => setScale(1);
-
-  useEffect(() => {
+  
+  // Render function to keep logic in one place
+  const renderMermaid = useCallback(() => {
     if (!mermaidRef.current || !chart) return;
     
-    // Clear the container and error state
-    mermaidRef.current.innerHTML = '';
+    // Initialize render config
+    const renderConfig = {
+      ...config,
+      fontFamily: 'system-ui, sans-serif',
+      flowchart: {
+        curve: 'basis',
+        htmlLabels: true,
+        padding: compact ? 2 : 15,
+        nodeSpacing: compact ? 10 : 50,
+        rankSpacing: compact ? 20 : 70
+      }
+    };
+
+    // Reset the container and apply scale transform
+    mermaidRef.current.innerHTML = `<div class="mermaid-wrapper" style="transform: scale(${scale}); transform-origin: ${compact ? 'top' : 'center'} center; transition: transform 0.2s ease-in-out;">${chart}</div>`;
+
+    // Ensure the DOM is ready before rendering
+    try {
+      mermaid.init(renderConfig, '.mermaid-wrapper');
+      
+      // Apply compact styling if needed
+      if (compact && mermaidRef.current) {
+        const svgElement = mermaidRef.current.querySelector('svg');
+        if (svgElement) {
+          svgElement.style.maxWidth = '100%';
+          svgElement.style.height = 'auto';
+          svgElement.style.fontSize = '0.8em';
+          
+          const textElements = svgElement.querySelectorAll('text');
+          textElements.forEach(text => {
+            text.style.fontSize = '0.9em';
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error rendering mermaid diagram:', err);
+      setError('Failed to render diagram. Check syntax and try again.');
+      if (mermaidRef.current) {
+        mermaidRef.current.innerHTML = `<div class="p-2 text-red-500 text-xs">Error rendering diagram</div>`;
+      }
+    }
+  }, [chart, scale, compact, config]);
+
+  // Trigger rendering when the chart or other essential props change
+  useEffect(() => {
+    // Reset error state
     setError(null);
     
-    const wrapper = document.createElement('div');
-    wrapper.className = 'mermaid-wrapper';
-    wrapper.style.transform = `scale(${scale})`;
-    wrapper.style.transformOrigin = 'center center';
-    wrapper.style.transition = 'transform 0.2s ease-in-out';
-    mermaidRef.current.appendChild(wrapper);
+    // Skip if no ref or no chart
+    if (!mermaidRef.current || !chart) return;
+    
+    // Track if chart changed
+    const chartChanged = chartRef.current !== chart;
+    chartRef.current = chart;
+    
+    // Only render if something important changed
+    renderMermaid();
+    
+    // Cleanup function
+    return () => {
+      // Optional cleanup if needed
+    };
+  }, [chart, scale, compact, config, renderMermaid]);
 
-    try {
-      // Render the mermaid diagram
-      mermaid.render(uniqueId, chart)
-        .then(({ svg }) => {
-          wrapper.innerHTML = svg;
-          
-          // Make the SVG responsive and centered
-          const svgElement = wrapper.querySelector('svg');
-          if (svgElement) {
-            svgElement.style.maxWidth = '100%';
-            svgElement.style.height = 'auto';
-            svgElement.style.margin = '0 auto';
-            svgElement.style.display = 'block';
-          }
-        })
-        .catch(error => {
-          console.error('Error rendering mermaid diagram:', error, chart);
-          setError('Failed to render diagram. Check syntax and try again.');
-          wrapper.innerHTML = `<div class="p-4 text-red-500">Error rendering diagram</div>`;
-        });
-    } catch (error) {
-      console.error('Error setting up mermaid diagram:', error);
-      setError('Could not initialize diagram renderer.');
-      wrapper.innerHTML = `<div class="p-4 text-red-500">Error setting up diagram</div>`;
-    }
-  }, [chart, uniqueId, scale]);
+  // Compact mode has minimal controls and smaller size
+  if (compact) {
+    return (
+      <div className="mermaid-diagram-container w-full">
+        <div 
+          ref={mermaidRef} 
+          className="mermaid-diagram w-full min-h-[80px] flex items-center justify-center overflow-hidden"
+          onClick={resetZoom}
+        />
+        
+        {error && (
+          <div className="mt-1 text-red-500 text-xs">
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="mermaid-diagram-container w-full">
