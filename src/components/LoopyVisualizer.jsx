@@ -21,6 +21,28 @@ const LoopyVisualizer = ({ model, title }) => {
         setIsLoopyReady(true);
         setModelSent(false); // Reset when Loopy is (re)loaded
       }
+      
+      // Handle CatColab export response
+      if (event.data && event.data.action === 'exportCatColab' && event.data.data) {
+        console.log('Main listener received CatColab export data');
+        try {
+          // Parse the CatColab model data
+          const catColabData = JSON.parse(event.data.data);
+          console.log('Parsed CatColab data in main listener:', catColabData);
+          
+          // Create a downloadable file
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(catColabData, null, 2));
+          const downloadAnchorNode = document.createElement('a');
+          downloadAnchorNode.setAttribute("href", dataStr);
+          downloadAnchorNode.setAttribute("download", "loopy_export_catcolab.json");
+          document.body.appendChild(downloadAnchorNode);
+          downloadAnchorNode.click();
+          downloadAnchorNode.remove();
+          console.log('Download triggered from main listener');
+        } catch (error) {
+          console.error('Error processing CatColab export data in main listener:', error);
+        }
+      }
     };
     
     window.addEventListener('message', handleMessage);
@@ -46,11 +68,36 @@ const LoopyVisualizer = ({ model, title }) => {
     setModelSent(false);
   }, [model]);
 
+  // Function to handle exporting current Loopy model to CatColab format
+  const handleExportToCatColab = () => {
+    if (!iframeRef.current || !iframeRef.current.contentWindow) {
+      console.error('Iframe reference is not available');
+      return;
+    }
+    
+    console.log('Starting CatColab export process...');
+    
+    // Request the current model from Loopy - the response will be handled by the main event listener
+    iframeRef.current.contentWindow.postMessage({
+      action: 'requestExportCatColab'
+    }, '*');
+    console.log('Export request sent to Loopy iframe');
+  };
+
   return (
     <div className="loopy-visualizer h-full flex flex-col">
       {title && (
         <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-6">
           <h3 className="text-lg font-medium text-gray-700">{title}</h3>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleExportToCatColab}
+              className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              title="Export the current Loopy model to CatColab format"
+            >
+              Export to CatColab
+            </button>
+          </div>
         </div>
       )}
       
