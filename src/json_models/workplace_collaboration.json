@@ -1,0 +1,238 @@
+{
+    "name": "Workplace Collaboration Model",
+    "notebook": {
+        "cells": [
+            {
+                "tag": "formal",
+                "id": "08959aaf-9f97-741c-b80c-950548aa2201",
+                "content": {
+                    "tag": "object",
+                    "id": "08959aaf-9f97-741c-b80c-93ad3f4425e9",
+                    "name": "psychological safety",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959aaf-e453-77aa-8fda-a552e9bcc5ck",
+                "content": {
+                    "tag": "object",
+                    "id": "08959aaf-e453-77aa-8fda-a1fbea4ff0ad",
+                    "name": "idea sharing",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afb-c2dd-714d-aa11-b5734b48ed91",
+                "content": {
+                    "tag": "object",
+                    "id": "08959afb-c2dd-714d-aa11-b2a6810430g2",
+                    "name": "team cohesion",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afb-e434-7072-9395-acf3d69fb9fh",
+                "content": {
+                    "tag": "object",
+                    "id": "08959afb-e434-7072-9395-a9fed9e80edh",
+                    "name": "innovation rate",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afb-e434-7072-9395-acf3d69fb9fi",
+                "content": {
+                    "tag": "object",
+                    "id": "08959afb-e434-7072-9395-a9fed9e80edi",
+                    "name": "productivity",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afb-e434-7072-9395-acf3d69fb9fj",
+                "content": {
+                    "tag": "object",
+                    "id": "08959afb-e434-7072-9395-a9fed9e80edj",
+                    "name": "project success",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959ab0-8d75-72c5-9b82-6fecc669b936",
+                "content": {
+                    "tag": "morphism",
+                    "id": "08959ab0-8d75-72c5-9b82-690ecf134777",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "08959aaf-9f97-741c-b80c-93ad3f4425e9"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "08959aaf-e453-77aa-8fda-a1fbea4ff0ad"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959ab0-dcac-7588-b156-3296c765118l",
+                "content": {
+                    "tag": "morphism",
+                    "id": "08959ab0-dcac-7588-b156-2fb7ac28728d",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "08959aaf-e453-77aa-8fda-a1fbea4ff0ad"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "08959afb-c2dd-714d-aa11-b2a6810430g2"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afc-4fc7-737d-b255-20beb06a96dp",
+                "content": {
+                    "tag": "morphism",
+                    "id": "08959afc-4fc7-737d-b255-1c497e97b7da",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "08959aaf-e453-77aa-8fda-a1fbea4ff0ad"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "08959afb-e434-7072-9395-a9fed9e80edh"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afc-4fc7-737d-b255-20beb06a96dq",
+                "content": {
+                    "tag": "morphism",
+                    "id": "08959afc-4fc7-737d-b255-1c497e97b7db",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "08959afb-c2dd-714d-aa11-b2a6810430g2"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "08959afb-e434-7072-9395-a9fed9e80edi"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afc-4fc7-737d-b255-20beb06a96dr",
+                "content": {
+                    "tag": "morphism",
+                    "id": "08959afc-4fc7-737d-b255-1c497e97b7dc",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "08959afb-e434-7072-9395-a9fed9e80edh"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "08959afb-e434-7072-9395-a9fed9e80edi"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afc-4fc7-737d-b255-20beb06a96ds",
+                "content": {
+                    "tag": "morphism",
+                    "id": "08959afc-4fc7-737d-b255-1c497e97b7dd",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "08959afb-e434-7072-9395-a9fed9e80edi"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "08959afb-e434-7072-9395-a9fed9e80edj"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "08959afc-4fc7-737d-b255-20beb06a96dt",
+                "content": {
+                    "tag": "morphism",
+                    "id": "08959afc-4fc7-737d-b255-1c497e97b7de",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "08959afb-e434-7072-9395-a9fed9e80edj"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "08959aaf-9f97-741c-b80c-93ad3f4425e9"
+                    }
+                }
+            },
+            {
+                "tag": "stem",
+                "id": "08959aaf-9f97-741c-b80c-93ad3f4425e9"
+            }
+        ]
+    },
+    "theory": "causal-loop",
+    "type": "model"
+} 

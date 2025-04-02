@@ -18,6 +18,11 @@ import emotionalIntelligence from './json_models/emotional_intelligence.json';
 import socialSupport from './json_models/social_support.json';
 import communicationQuality from './json_models/communication_quality.json';
 import boundaryDynamics from './json_models/boundary_dynamics.json';
+import workplaceCollaboration from './json_models/workplace_collaboration.json';
+import interpersonalBoundaries from './json_models/interpersonal_boundaries.json';
+import relationshipCommunication from './json_models/relationship_communication.json';
+import empathicConnection from './json_models/empathic_connection.json';
+import groupIdentityFormation from './json_models/group_identity_formation.json';
 
 // Create a models object using the original file names
 const jsonModels = {
@@ -35,7 +40,12 @@ const jsonModels = {
   'emotional_intelligence.json': emotionalIntelligence,
   'social_support.json': socialSupport,
   'communication_quality.json': communicationQuality,
-  'boundary_dynamics.json': boundaryDynamics
+  'boundary_dynamics.json': boundaryDynamics,
+  'workplace_collaboration.json': workplaceCollaboration,
+  'interpersonal_boundaries.json': interpersonalBoundaries,
+  'relationship_communication.json': relationshipCommunication,
+  'empathic_connection.json': empathicConnection,
+  'group_identity_formation.json': groupIdentityFormation
 };
 
 // Helper function to format model names for display
@@ -49,25 +59,57 @@ const formatModelName = (filename) => {
 
 const Demo = () => {
   const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filter models based on search term
+  const filteredModels = Object.keys(jsonModels).filter(filename => {
+    const displayName = formatModelName(filename).toLowerCase();
+    return displayName.includes(searchTerm.toLowerCase());
+  });
   
   // Sidebar component for model selection
   const ModelSidebar = () => (
     <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col">
       <h3 className="text-lg font-semibold mb-4 text-gray-700">Available Models</h3>
-      <div className="space-y-2 flex-1 overflow-y-auto pr-2">
-        {Object.keys(jsonModels).map((filename) => (
-          <div 
-            key={filename}
-            onClick={() => setSelectedModel(filename)}
-            className={`p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-blue-50 ${
-              selectedModel === filename 
-                ? 'bg-blue-100 border-l-4 border-blue-500' 
-                : 'bg-gray-50'
-            } mb-2`}
-          >
-            <p className="font-medium">{formatModelName(filename)}</p>
+      
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search models..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 pl-10"
+          />
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
-        ))}
+        </div>
+      </div>
+      
+      <div className="space-y-2 flex-1 overflow-y-auto pr-2">
+        {filteredModels.length > 0 ? (
+          filteredModels.map((filename) => (
+            <div 
+              key={filename}
+              onClick={() => setSelectedModel(filename)}
+              className={`p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-blue-50 ${
+                selectedModel === filename 
+                  ? 'bg-blue-100 border-l-4 border-blue-500' 
+                  : 'bg-gray-50'
+              } mb-2`}
+            >
+              <p className="font-medium">{formatModelName(filename)}</p>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No models found matching "{searchTerm}"</p>
+          </div>
+        )}
       </div>
       
       <div className="mt-4 pt-4 border-t border-gray-200">
