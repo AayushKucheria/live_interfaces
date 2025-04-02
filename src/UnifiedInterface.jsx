@@ -48,8 +48,54 @@ const MermaidModal = ({ isOpen, onClose, model, title }) => {
   );
 };
 
+// Feedback modal for "Steal This" functionality
+const FeedbackModal = ({ isOpen, onClose, model, title, onSubmit }) => {
+  const [feedback, setFeedback] = useState('');
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black bg-opacity-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full flex flex-col">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-gray-800">Steal Model</h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6">
+          <p className="mb-4">What do you like about <span className="font-medium">{title}</span>?</p>
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            rows={4}
+            placeholder="Share your thoughts..."
+          />
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => {
+                onSubmit(feedback);
+                setFeedback('');
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Steal
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Memoized MermaidPreview component to avoid unnecessary re-renders
-const MermaidPreview = memo(({ model, isSelected, onExpand }) => {
+const MermaidPreview = memo(({ model, isSelected }) => {
   // Memoize the mermaid code generation
   const mermaidCode = useMemo(() => {
     const parsedModel = parseModelData(model);
@@ -69,30 +115,65 @@ const MermaidPreview = memo(({ model, isSelected, onExpand }) => {
           compact={true}
         />
       </div>
-      <button 
-        onClick={(e) => {
-          e.stopPropagation(); // Prevent selection in the parent
-          onExpand();
-        }}
-        className="mt-2 w-full text-xs text-blue-600 hover:text-blue-800 border border-blue-200 bg-blue-50 rounded px-2 py-1"
-      >
-        Expand View
-      </button>
+      <div className="mt-2 w-full text-xs text-gray-500 text-center italic">
+        Click to expand
+      </div>
     </div>
   );
 });
 
 const UnifiedInterface = () => {
-  const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
+  const [selectedModel, setSelectedModel] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalModel, setModalModel] = useState(null);
   const [modalTitle, setModalTitle] = useState('');
   
+  // Add state for feedback modal
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [feedbackModel, setFeedbackModel] = useState(null);
+  const [feedbackTitle, setFeedbackTitle] = useState('');
+  
   // Handler to open modal with a specific model
   const handleExpandModel = (model, title) => {
     setModalModel(model);
-    setModalTitle(title);
+    setModalTitle(title || formatModelName(selectedModel));
     setModalOpen(true);
+  };
+  
+  // Handler to open feedback modal for stealing a model
+  const handleStealModel = (e, model, title) => {
+    e.stopPropagation(); // Prevent triggering the parent onClick
+    setFeedbackModel(model);
+    setFeedbackTitle(title);
+    setFeedbackModalOpen(true);
+  };
+  
+  // Handler for submitting feedback and stealing the model
+  const handleStealSubmit = (feedback) => {
+    console.log('User feedback:', feedback);
+    setSelectedModel(Object.keys(jsonModels).find(key => jsonModels[key] === feedbackModel));
+    setFeedbackModalOpen(false);
+  };
+  
+  // Format model name by removing .json extension and adding spaces
+  const formatModelName = (filename) => {
+    return filename
+      .replace('.json', '')
+      .split(/(?=[A-Z])|[-_]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Get placeholder description for model
+  const getModelDescription = (filename) => {
+    // Placeholder descriptions that could be replaced with actual descriptions later
+    const descriptions = {
+      'wolfchickens.json': 'A simple predator-prey relationship model between wolves and chickens.',
+      'wolfchickenworm.json': 'An ecosystem model with wolves, chickens, and worms interactions.',
+      'wormedwolves.json': 'A parasitic relationship model between worms and wolves.',
+    };
+    
+    return descriptions[filename] || 'A causal loop diagram model.';
   };
   
   // Sidebar component for model selection with Mermaid visualizations
@@ -104,11 +185,15 @@ const UnifiedInterface = () => {
           {Object.keys(jsonModels).map((filename) => {
             const model = jsonModels[filename];
             const isSelected = selectedModel === filename;
+            const displayName = formatModelName(filename);
+            const description = getModelDescription(filename);
             
             return (
               <div 
                 key={filename}
-                onClick={() => setSelectedModel(filename)}
+                onClick={() => {
+                  handleExpandModel(model, displayName);
+                }}
                 className={`rounded-md cursor-pointer transition-all duration-200 ${
                   isSelected 
                     ? 'ring-2 ring-blue-500' 
@@ -116,12 +201,18 @@ const UnifiedInterface = () => {
                 }`}
               >
                 <div className="p-3 border-b border-gray-200">
-                  <p className="font-medium">{filename}</p>
+                  <p className="font-medium text-gray-900">{displayName}</p>
+                  <p className="text-sm text-gray-600 mt-1">{description}</p>
+                  <button
+                    onClick={(e) => handleStealModel(e, model, displayName)}
+                    className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                  >
+                    Steal
+                  </button>
                 </div>
                 <MermaidPreview 
                   model={model} 
-                  isSelected={isSelected} 
-                  onExpand={() => handleExpandModel(model, filename)}
+                  isSelected={isSelected}
                 />
               </div>
             );
@@ -144,7 +235,7 @@ const UnifiedInterface = () => {
         <main className="flex-1 p-6 overflow-auto">
           <div className="bg-white rounded-lg shadow-md p-6 h-full">
             <LoopyVisualizer 
-              model={jsonModels[selectedModel]} 
+              model={selectedModel ? jsonModels[selectedModel] : null} 
               title="Loopy Interactive Model" 
             />
           </div>
@@ -170,6 +261,15 @@ const UnifiedInterface = () => {
         onClose={() => setModalOpen(false)}
         model={modalModel}
         title={modalTitle}
+      />
+      
+      {/* Feedback modal for stealing models */}
+      <FeedbackModal
+        isOpen={feedbackModalOpen}
+        onClose={() => setFeedbackModalOpen(false)}
+        model={feedbackModel}
+        title={feedbackTitle}
+        onSubmit={handleStealSubmit}
       />
     </div>
   );
