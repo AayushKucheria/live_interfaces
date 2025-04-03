@@ -184,11 +184,35 @@ export function sendModelToLoopy(model, iframe) {
       });
     }
     
-    // Convert model to string and send via postMessage
-    const modelString = JSON.stringify(model);
+    // Convert model to Loopy's expected format
+    const loopyFormat = [
+      model.nodes.map(node => [
+        node.id,
+        node.x,
+        node.y,
+        node.init || 0,
+        encodeURIComponent(node.name),
+        node.hue
+      ]),
+      model.edges.map(edge => [
+        edge.from,
+        edge.to,
+        edge.arc || 0,
+        edge.strength || 1,
+        edge.rotation || 0
+      ]),
+      model.labels.map(label => [
+        label.x,
+        label.y,
+        encodeURIComponent(label.text)
+      ]),
+      Date.now() // UID
+    ];
+    
+    // Send via postMessage
     iframe.contentWindow.postMessage({
-      action: 'load',
-      data: modelString
+      action: 'import',
+      data: JSON.stringify(loopyFormat)
     }, '*');
     
     return true;

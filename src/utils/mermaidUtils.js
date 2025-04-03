@@ -104,6 +104,11 @@ export function modelToMermaid(model, options = {}) {
     return 'graph TD\n  missing[Missing model data]';
   }
   
+  // For simplified view in library overlay
+  if (options.simplified) {
+    return generateSimplifiedMermaid(model, options);
+  }
+  
   // Determine model type and use appropriate conversion
   if (model.type === 'ecosystem') {
     return ecosystemModelToMermaid(model);
@@ -113,6 +118,57 @@ export function modelToMermaid(model, options = {}) {
   
   // Default to causal model if type not specified
   return causalModelToMermaid(model);
+}
+
+/**
+ * Generates a simplified mermaid diagram for the library overlay
+ * @param {Object} model The model to convert
+ * @param {Object} options Visualization options
+ * @returns {string} Simplified mermaid diagram code
+ */
+function generateSimplifiedMermaid(model, options = {}) {
+  if (!model || (!model.objects && !model.morphisms)) {
+    return 'graph TD\n  missing[Missing model data]';
+  }
+  
+  const parsedModel = parseModelData(model);
+  const { objects, morphisms } = parsedModel;
+  const direction = options.direction || 'TB';
+  const nodeStyle = options.nodeStyle || 'circle';
+  
+  // Start with flowchart definition
+  let mermaidCode = `graph ${direction}\n`;
+  
+  // Add nodes with simplified styling
+  objects.forEach(obj => {
+    const safeId = sanitizeId(obj.id);
+    if (nodeStyle === 'circle') {
+      // Use circle nodes for simplified view
+      mermaidCode += `  ${safeId}((${obj.name.substring(0, 3)}))\n`;
+    } else if (nodeStyle === 'box') {
+      // Use box nodes
+      mermaidCode += `  ${safeId}["${obj.name}"]\n`;
+    } else {
+      // Default style
+      mermaidCode += `  ${safeId}["${obj.name}"]\n`;
+    }
+  });
+  
+  // Add relationships with minimal styling
+  morphisms.forEach(morphism => {
+    const fromId = sanitizeId(findObjectById(objects, morphism.from)?.id || morphism.from);
+    const toId = sanitizeId(findObjectById(objects, morphism.to)?.id || morphism.to);
+    
+    if (morphism.type === 'Negative') {
+      // Simplified dashed line for negative
+      mermaidCode += `  ${fromId} -.- ${toId}\n`;
+    } else {
+      // Simplified solid line for positive
+      mermaidCode += `  ${fromId} --> ${toId}\n`;
+    }
+  });
+  
+  return mermaidCode;
 }
 
 /**
