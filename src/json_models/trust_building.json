@@ -1,0 +1,183 @@
+{
+    "name": "Trust Building Model",
+    "notebook": {
+        "cells": [
+            {
+                "tag": "formal",
+                "id": "06959aaf-9f97-741c-b80c-950548aa2200",
+                "content": {
+                    "tag": "object",
+                    "id": "06959aaf-9f97-741c-b80c-93ad3f4425e8",
+                    "name": "vulnerability",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959aaf-e453-77aa-8fda-a552e9bcc5cj",
+                "content": {
+                    "tag": "object",
+                    "id": "06959aaf-e453-77aa-8fda-a1fbea4ff0ac",
+                    "name": "consistency",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959afb-c2dd-714d-aa11-b5734b48ed90",
+                "content": {
+                    "tag": "object",
+                    "id": "06959afb-c2dd-714d-aa11-b2a6810430g1",
+                    "name": "reliability",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959afb-e434-7072-9395-acf3d69fb9fg",
+                "content": {
+                    "tag": "object",
+                    "id": "06959afb-e434-7072-9395-a9fed9e80edg",
+                    "name": "trust level",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959afb-e434-7072-9395-acf3d69fb9fh",
+                "content": {
+                    "tag": "object",
+                    "id": "06959afb-e434-7072-9395-a9fed9e80edh",
+                    "name": "relationship depth",
+                    "obType": {
+                        "tag": "Basic",
+                        "content": "Object"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959ab0-8d75-72c5-9b82-6fecc669b935",
+                "content": {
+                    "tag": "morphism",
+                    "id": "06959ab0-8d75-72c5-9b82-690ecf134776",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "06959aaf-9f97-741c-b80c-93ad3f4425e8"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "06959afb-e434-7072-9395-a9fed9e80edg"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959ab0-dcac-7588-b156-3296c765118k",
+                "content": {
+                    "tag": "morphism",
+                    "id": "06959ab0-dcac-7588-b156-2fb7ac28728c",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "06959aaf-e453-77aa-8fda-a1fbea4ff0ac"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "06959afb-c2dd-714d-aa11-b2a6810430g1"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959afc-4fc7-737d-b255-20beb06a96dm",
+                "content": {
+                    "tag": "morphism",
+                    "id": "06959afc-4fc7-737d-b255-1c497e97b7d7",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "06959afb-c2dd-714d-aa11-b2a6810430g1"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "06959afb-e434-7072-9395-a9fed9e80edg"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959afc-4fc7-737d-b255-20beb06a96dn",
+                "content": {
+                    "tag": "morphism",
+                    "id": "06959afc-4fc7-737d-b255-1c497e97b7d8",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "06959afb-e434-7072-9395-a9fed9e80edg"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "06959afb-e434-7072-9395-a9fed9e80edh"
+                    }
+                }
+            },
+            {
+                "tag": "formal",
+                "id": "06959afc-4fc7-737d-b255-20beb06a96do",
+                "content": {
+                    "tag": "morphism",
+                    "id": "06959afc-4fc7-737d-b255-1c497e97b7d9",
+                    "name": "",
+                    "morType": {
+                        "tag": "Basic",
+                        "content": "Positive"
+                    },
+                    "dom": {
+                        "tag": "Basic",
+                        "content": "06959afb-e434-7072-9395-a9fed9e80edh"
+                    },
+                    "cod": {
+                        "tag": "Basic",
+                        "content": "06959aaf-9f97-741c-b80c-93ad3f4425e8"
+                    }
+                }
+            },
+            {
+                "tag": "stem",
+                "id": "06959aaf-9f97-741c-b80c-93ad3f4425e8"
+            }
+        ]
+    },
+    "theory": "causal-loop",
+    "type": "model"
+} 
