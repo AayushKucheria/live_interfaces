@@ -18,6 +18,11 @@ import emotionalIntelligence from './json_models/emotional_intelligence.json';
 import socialSupport from './json_models/social_support.json';
 import communicationQuality from './json_models/communication_quality.json';
 import boundaryDynamics from './json_models/boundary_dynamics.json';
+import workplaceCollaboration from './json_models/workplace_collaboration.json';
+import interpersonalBoundaries from './json_models/interpersonal_boundaries.json';
+import relationshipCommunication from './json_models/relationship_communication.json';
+import empathicConnection from './json_models/empathic_connection.json';
+import groupIdentityFormation from './json_models/group_identity_formation.json';
 
 // Create a models object using the original file names
 const jsonModels = {
@@ -35,7 +40,12 @@ const jsonModels = {
   'emotional_intelligence.json': emotionalIntelligence,
   'social_support.json': socialSupport,
   'communication_quality.json': communicationQuality,
-  'boundary_dynamics.json': boundaryDynamics
+  'boundary_dynamics.json': boundaryDynamics,
+  'workplace_collaboration.json': workplaceCollaboration,
+  'interpersonal_boundaries.json': interpersonalBoundaries,
+  'relationship_communication.json': relationshipCommunication,
+  'empathic_connection.json': empathicConnection,
+  'group_identity_formation.json': groupIdentityFormation
 };
 
 // Helper function to format model names for display
@@ -59,17 +69,17 @@ const LoopyDemo = () => {
       </p>
       <div className="flex-1 overflow-y-auto pr-2">
         {Object.keys(jsonModels).map((filename) => (
-          <div 
-            key={filename}
-            onClick={() => setSelectedModel(filename)}
-            className={`p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-blue-50 ${
-              selectedModel === filename 
-                ? 'bg-blue-100 border-l-4 border-blue-500' 
-                : 'bg-gray-50'
-            } mb-2`}
-          >
-            <p className="font-medium">{formatModelName(filename)}</p>
-          </div>
+            <div 
+              key={filename}
+              onClick={() => setSelectedModel(filename)}
+              className={`p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-blue-50 ${
+                selectedModel === filename 
+                  ? 'bg-blue-100 border-l-4 border-blue-500' 
+                  : 'bg-gray-50'
+              } mb-2`}
+            >
+              <p className="font-medium">{formatModelName(filename)}</p>
+            </div>
         ))}
       </div>
     </div>
@@ -80,12 +90,12 @@ const LoopyDemo = () => {
       {/* Header */}
       <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">CatCoLab Loopy Visualizer</h1>
-        <Link 
-          to="/" 
+          <Link 
+            to="/" 
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-        >
+          >
           Back to Mermaid View
-        </Link>
+          </Link>
       </header>
       
       {/* Main content with sidebar layout */}

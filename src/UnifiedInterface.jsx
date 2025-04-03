@@ -19,6 +19,11 @@ import emotionalIntelligence from './json_models/emotional_intelligence.json';
 import socialSupport from './json_models/social_support.json';
 import communicationQuality from './json_models/communication_quality.json';
 import boundaryDynamics from './json_models/boundary_dynamics.json';
+import workplaceCollaboration from './json_models/workplace_collaboration.json';
+import interpersonalBoundaries from './json_models/interpersonal_boundaries.json';
+import relationshipCommunication from './json_models/relationship_communication.json';
+import empathicConnection from './json_models/empathic_connection.json';
+import groupIdentityFormation from './json_models/group_identity_formation.json';
 
 // Create a models object using the original file names
 const jsonModels = {
@@ -36,7 +41,12 @@ const jsonModels = {
   'emotional_intelligence.json': emotionalIntelligence,
   'social_support.json': socialSupport,
   'communication_quality.json': communicationQuality,
-  'boundary_dynamics.json': boundaryDynamics
+  'boundary_dynamics.json': boundaryDynamics,
+  'workplace_collaboration.json': workplaceCollaboration,
+  'interpersonal_boundaries.json': interpersonalBoundaries,
+  'relationship_communication.json': relationshipCommunication,
+  'empathic_connection.json': empathicConnection,
+  'group_identity_formation.json': groupIdentityFormation
 };
 
 // Modal component for displaying the larger Mermaid diagram
@@ -206,7 +216,12 @@ const UnifiedInterface = () => {
       'emotional_intelligence.json': 'A model exploring components of emotional intelligence.',
       'social_support.json': 'A model of social support networks and their effects.',
       'communication_quality.json': 'A model of factors affecting communication quality.',
-      'boundary_dynamics.json': 'A model showing boundary-setting in relationships.'
+      'boundary_dynamics.json': 'A model showing boundary-setting in relationships.',
+      'workplace_collaboration.json': 'A model of collaboration dynamics in workplace settings.',
+      'interpersonal_boundaries.json': 'A model showing how personal boundaries affect relationships.',
+      'relationship_communication.json': 'A model of communication patterns in close relationships.',
+      'empathic_connection.json': 'A model of empathy and its effects on social connections.',
+      'group_identity_formation.json': 'A model of how group identities form and their effects.'
     };
     
     return descriptions[filename] || 'A causal loop diagram model.';
@@ -219,39 +234,39 @@ const UnifiedInterface = () => {
         <h3 className="text-lg font-semibold mb-4 text-gray-700">Available Models</h3>
         <div className="space-y-6 flex-1 overflow-y-auto pr-2">
           {Object.keys(jsonModels).map((filename) => {
-            const model = jsonModels[filename];
-            const isSelected = selectedModel === filename;
-            const displayName = formatModelName(filename);
-            const description = getModelDescription(filename);
-            
-            return (
-              <div 
-                key={filename}
-                onClick={() => {
-                  handleExpandModel(model, displayName);
-                }}
-                className={`rounded-md cursor-pointer transition-all duration-200 ${
-                  isSelected 
-                    ? 'ring-2 ring-blue-500' 
-                    : 'hover:bg-blue-50'
-                } mb-4`}
-              >
-                <div className="p-3 border-b border-gray-200">
-                  <p className="font-medium text-gray-900">{displayName}</p>
-                  <p className="text-sm text-gray-600 mt-1">{description}</p>
-                  <button
-                    onClick={(e) => handleStealModel(e, model, displayName)}
-                    className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                  >
-                    Steal
-                  </button>
+              const model = jsonModels[filename];
+              const isSelected = selectedModel === filename;
+              const displayName = formatModelName(filename);
+              const description = getModelDescription(filename);
+              
+              return (
+                <div 
+                  key={filename}
+                  onClick={() => {
+                    handleExpandModel(model, displayName);
+                  }}
+                  className={`rounded-md cursor-pointer transition-all duration-200 ${
+                    isSelected 
+                      ? 'ring-2 ring-blue-500' 
+                      : 'hover:bg-blue-50'
+                  } mb-4`}
+                >
+                  <div className="p-3 border-b border-gray-200">
+                    <p className="font-medium text-gray-900">{displayName}</p>
+                    <p className="text-sm text-gray-600 mt-1">{description}</p>
+                    <button
+                      onClick={(e) => handleStealModel(e, model, displayName)}
+                      className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                    >
+                      Steal
+                    </button>
+                  </div>
+                  <MermaidPreview 
+                    model={model} 
+                    isSelected={isSelected}
+                  />
                 </div>
-                <MermaidPreview 
-                  model={model} 
-                  isSelected={isSelected}
-                />
-              </div>
-            );
+              );
           })}
         </div>
       </div>
