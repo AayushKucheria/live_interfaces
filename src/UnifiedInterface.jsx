@@ -403,6 +403,16 @@ const UnifiedInterface = () => {
   const [feedbackModel, setFeedbackModel] = useState(null);
   const [feedbackTitle, setFeedbackTitle] = useState('');
   
+  // Add a new state for the view mode 
+  const [viewMode, setViewMode] = useState('detail'); // Options: 'detail', 'composition', 'overview'
+  
+  // Handle view mode changes
+  const handleViewModeChange = (mode) => {
+    console.log(`View mode changed to: ${mode}`);
+    setViewMode(mode);
+    // In the future, this function will update the layout based on the selected view
+  };
+  
   // Handler to open modal with a specific model
   const handleExpandModel = (model, title) => {
     setModalModel(model);
@@ -576,13 +586,74 @@ const UnifiedInterface = () => {
         </aside>
       </div>
       
-      {/* Footer with info */}
-      <footer className="bg-white shadow-inner px-6 py-3 text-sm text-gray-600">
-        <p>
-          Loopy is an interactive tool for creating causal loop diagrams. 
-          You can create nodes and arrows to model system dynamics.
-        </p>
-      </footer>
+      {/* Replace footer with view mode slider */}
+      <div className="bg-white shadow-inner py-4 flex justify-center items-center">
+        <div className="w-1/3 flex flex-col items-center">
+          <div className="flex justify-between w-full mb-2">
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'detail' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Detail View</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'composition' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Composition</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'overview' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Overview</span>
+          </div>
+          <div className="relative w-full h-8">
+            {/* Background track */}
+            <div 
+              className="absolute left-0 right-0 top-1/2 h-1 -mt-0.5 rounded-full"
+              style={{
+                background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899)'
+              }}
+            ></div>
+            
+            {/* Colored progress track */}
+            <div 
+              className="absolute left-0 top-1/2 h-1 -mt-0.5 rounded-full transition-all duration-300"
+              style={{
+                width: viewMode === 'detail' ? '0%' : viewMode === 'composition' ? '50%' : '100%'
+              }}
+            ></div>
+            
+            {/* Invisible range input */}
+            <input 
+              type="range" 
+              min="0" 
+              max="2" 
+              step="1"
+              value={viewMode === 'detail' ? 0 : viewMode === 'composition' ? 1 : 2}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (val === 0) handleViewModeChange('detail');
+                else if (val === 1) handleViewModeChange('composition');
+                else handleViewModeChange('overview');
+              }}
+              className="appearance-none absolute inset-0 w-full h-2 mt-3 opacity-0 cursor-pointer z-10"
+            />
+            
+            {/* Slider button markers */}
+            <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
+              <button 
+                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                  ${viewMode === 'detail' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('detail')}
+              >
+                {viewMode === 'detail' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+              </button>
+              <button 
+                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                  ${viewMode === 'composition' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('composition')}
+              >
+                {viewMode === 'composition' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+              </button>
+              <button 
+                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                  ${viewMode === 'overview' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('overview')}
+              >
+                {viewMode === 'overview' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Modal for expanded Mermaid view */}
       <MermaidModal
