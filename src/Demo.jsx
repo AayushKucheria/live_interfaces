@@ -59,13 +59,40 @@ const formatModelName = (filename) => {
 
 const Demo = () => {
   const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filter models based on search term
+  const filteredModels = Object.keys(jsonModels).filter(filename => {
+    const displayName = formatModelName(filename).toLowerCase();
+    return displayName.includes(searchTerm.toLowerCase());
+  });
   
   // Sidebar component for model selection
   const ModelSidebar = () => (
     <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col">
       <h3 className="text-lg font-semibold mb-4 text-gray-700">Available Models</h3>
+      
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search models..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 pl-10"
+          />
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      
       <div className="space-y-2 flex-1 overflow-y-auto pr-2">
-        {Object.keys(jsonModels).map((filename) => (
+        {filteredModels.length > 0 ? (
+          filteredModels.map((filename) => (
             <div 
               key={filename}
               onClick={() => setSelectedModel(filename)}
@@ -77,7 +104,12 @@ const Demo = () => {
             >
               <p className="font-medium">{formatModelName(filename)}</p>
             </div>
-        ))}
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No models found matching "{searchTerm}"</p>
+          </div>
+        )}
       </div>
       
       <div className="mt-4 pt-4 border-t border-gray-200">

@@ -59,6 +59,13 @@ const formatModelName = (filename) => {
 
 const LoopyDemo = () => {
   const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filter models based on search term
+  const filteredModels = Object.keys(jsonModels).filter(filename => {
+    const displayName = formatModelName(filename).toLowerCase();
+    return displayName.includes(searchTerm.toLowerCase());
+  });
   
   // Sidebar component for model selection
   const ModelSidebar = () => (
@@ -67,8 +74,28 @@ const LoopyDemo = () => {
       <p className="text-sm text-gray-600 mb-4">
         Select a model to convert to Loopy format. This is experimental and may not represent all relations perfectly.
       </p>
+      
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search models..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 pl-10"
+          />
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      
       <div className="flex-1 overflow-y-auto pr-2">
-        {Object.keys(jsonModels).map((filename) => (
+        {filteredModels.length > 0 ? (
+          filteredModels.map((filename) => (
             <div 
               key={filename}
               onClick={() => setSelectedModel(filename)}
@@ -80,7 +107,12 @@ const LoopyDemo = () => {
             >
               <p className="font-medium">{formatModelName(filename)}</p>
             </div>
-        ))}
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No models found matching "{searchTerm}"</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -88,19 +120,21 @@ const LoopyDemo = () => {
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">CatCoLab Loopy Visualizer</h1>
+      <header className="bg-white shadow-sm px-6 py-3">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">CatCoLab Loopy Converter</h1>
           <Link 
             to="/" 
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
-          Back to Mermaid View
+            Back to Visualizer
           </Link>
+        </div>
       </header>
       
       {/* Main content with sidebar layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Main visualization area */}
+        {/* Main visualization area with Loopy */}
         <main className="flex-1 p-6 overflow-auto">
           <div className="bg-white rounded-lg shadow-md p-6 h-full">
             <LoopyVisualizer 
