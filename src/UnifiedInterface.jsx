@@ -202,15 +202,15 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
   };
   
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col overflow-auto">
-      {/* Main content container with blue border styling */}
-      <div className="flex flex-col m-4 border-2 border-blue-400 rounded-lg h-full">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex flex-col overflow-auto">
+      {/* Main content container with styling matching visualizer */}
+      <div className="flex flex-col m-4 bg-white rounded-lg shadow-md h-full">
         {/* Header with close button */}
-        <div className="flex justify-between items-center p-4">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <div className="w-1/3">
             {/* Left side - Visualizer button */}
             <div 
-              className="inline-block border-2 border-blue-400 rounded-lg px-4 py-2 text-blue-400 cursor-pointer hover:bg-blue-900"
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               onClick={onClose}
             >
               <span>📊 Visualizer</span>
@@ -218,13 +218,13 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
           </div>
           
           {/* Center - Title */}
-          <h2 className="text-2xl font-bold text-blue-400 text-center w-1/3">Model Directory</h2>
+          <h2 className="text-2xl font-bold text-gray-800 text-center w-1/3">Model Directory</h2>
           
           {/* Right side - Close button */}
           <div className="w-1/3 flex justify-end">
             <button 
               onClick={onClose}
-              className="text-blue-400 hover:text-blue-300 focus:outline-none"
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
             >
               <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -238,15 +238,15 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
           {/* Left column */}
           <div className="w-1/4 flex flex-col space-y-4 mr-4">
             {/* Future prompting area */}
-            <div className="border-2 border-blue-500 rounded-lg p-4 flex-1">
-              <p className="text-blue-400 italic">
+            <div className="border border-gray-200 rounded-lg p-4 flex-1 bg-gray-50">
+              <p className="text-gray-600 italic">
                 &lt;Future prompting area for searching, including by structure, subgraph size and shape, reinforcing and balancing loops, application domain etc&gt;
               </p>
             </div>
             
             {/* Placeholder info area */}
-            <div className="border-2 border-blue-500 rounded-lg p-4 flex-1">
-              <p className="text-blue-400 italic">
+            <div className="border border-gray-200 rounded-lg p-4 flex-1 bg-gray-50">
+              <p className="text-gray-600 italic">
                 &lt;Placeholder space for more information about the model's inspiration, central mechanism/functional difference from other options.&gt;
               </p>
             </div>
@@ -255,11 +255,11 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
           {/* Center and right column for model display */}
           <div className="w-3/4 flex flex-col overflow-hidden">
             {/* Fixed controls section */}
-            <div className="sticky top-0 bg-black z-10 pb-4">
+            <div className="sticky top-0 bg-white z-10 pb-4">
               {/* Compare Selection button */}
               <div className="flex justify-center mb-6">
                 <div 
-                  className={`px-6 py-2 bg-transparent border-2 border-orange-500 text-orange-500 rounded-full ${selectedModels.length > 0 ? 'cursor-pointer hover:bg-orange-900' : 'opacity-70 cursor-not-allowed'}`}
+                  className={`px-6 py-2 bg-orange-500 text-white rounded-md ${selectedModels.length > 0 ? 'cursor-pointer hover:bg-orange-600' : 'opacity-70 cursor-not-allowed'}`}
                   onClick={handleCompareClick}
                 >
                   Compare Selection ({selectedModels.length}/3)
@@ -268,33 +268,33 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
               
               {/* Experimental area */}
               <div className="mb-6">
-                <div className="border-2 border-blue-500 rounded-lg p-4 text-blue-400">
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   {showingComparison ? (
                     <div>
                       <div className="flex justify-between mb-2">
-                        <h3 className="text-blue-400 font-bold">COMPARING MODELS</h3>
+                        <h3 className="text-gray-800 font-bold">COMPARING MODELS</h3>
                         <button 
                           onClick={resetComparison}
-                          className="text-blue-400 hover:text-blue-300 focus:outline-none"
+                          className="text-gray-600 hover:text-gray-800 focus:outline-none"
                         >
                           Reset
                         </button>
                       </div>
                       <div className="flex justify-center space-x-4">
                         {selectedModels.map((filename) => (
-                          <div key={filename} className="w-1/3 border border-blue-500 rounded-lg p-2">
+                          <div key={filename} className="w-1/3 border border-gray-300 rounded-lg p-2 bg-white">
                             <div className="h-32 flex items-center justify-center">
                               <MermaidDiagram 
                                 chart={generateSimplifiedMermaid(models[filename])} 
                                 config={{ 
-                                  theme: 'dark',
+                                  theme: 'neutral',
                                   fontFamily: 'system-ui, sans-serif',
                                   flowchart: { curve: 'basis', htmlLabels: true },
                                 }} 
                                 compact={true}
                               />
                             </div>
-                            <div className="text-blue-400 text-sm font-medium text-center mt-2">
+                            <div className="text-gray-700 text-sm font-medium text-center mt-2">
                               {formatModelName(filename)}
                             </div>
                           </div>
@@ -302,12 +302,12 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
                       </div>
                     </div>
                   ) : (
-                    <p className="italic text-center">&lt;EXPERIMENTAL AREA FOR POSSIBLE COMPOSITIONS&gt;</p>
+                    <p className="italic text-center text-gray-600">&lt;EXPERIMENTAL AREA FOR POSSIBLE COMPOSITIONS&gt;</p>
                   )}
                 </div>
                 
                 <div className="mt-4 flex justify-center">
-                  <div className={`inline-block px-6 py-2 bg-transparent border-2 border-green-500 text-green-500 rounded-full ${showingComparison ? 'cursor-pointer hover:bg-green-900' : 'opacity-70'}`}>
+                  <div className={`inline-block px-6 py-2 bg-green-600 text-white rounded-md ${showingComparison ? 'cursor-pointer hover:bg-green-700' : 'opacity-70'}`}>
                     Confirm Compose
                   </div>
                 </div>
@@ -327,7 +327,7 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
                   return (
                     <div 
                       key={filename}
-                      className={`border-2 ${isSelected ? 'border-orange-500' : 'border-blue-500'} rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:border-blue-300`}
+                      className={`border ${isSelected ? 'border-orange-500 ring-2 ring-orange-500' : 'border-gray-200'} rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md`}
                       onClick={() => onSelectModel(model, displayName)}
                     >
                       <div className="p-4 flex flex-col items-center">
@@ -336,7 +336,7 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
                           <MermaidDiagram 
                             chart={mermaidCode} 
                             config={{ 
-                              theme: 'dark',
+                              theme: 'neutral',
                               fontFamily: 'system-ui, sans-serif',
                               flowchart: { curve: 'basis', htmlLabels: true },
                             }} 
@@ -344,7 +344,7 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
                           />
                         </div>
                         
-                        <div className="text-blue-400 text-sm font-medium mb-2 text-center">
+                        <div className="text-gray-800 text-sm font-medium mb-2 text-center">
                           {displayName}
                         </div>
                         
