@@ -1,53 +1,8 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, memo, useEffect, useRef } from 'react';
 import LoopyVisualizer from './components/LoopyVisualizer';
 import MermaidDiagram from './components/MermaidDiagram';
 import { modelToMermaid, parseModelData } from './utils/mermaidUtils';
-
-// Import JSON models from the json_models directory
-import wolfchickens from './json_models/wolfchickens.json';
-import wolfchickenworm from './json_models/wolfchickenworm.json';
-import wormedwolves from './json_models/wormedwolves.json';
-import causalLoopJson from './json_models/causal-loop-json.json';
-import teamDynamics from './json_models/team_dynamics.json';
-import conflictResolution from './json_models/conflict_resolution.json';
-import mediationDynamics from './json_models/mediation_dynamics.json';
-import communicationPathways from './json_models/communication_pathways.json';
-import tensionEscalation from './json_models/tension_escalation.json';
-import peaceBuilding from './json_models/peace_building.json';
-import trustBuilding from './json_models/trust_building.json';
-import emotionalIntelligence from './json_models/emotional_intelligence.json';
-import socialSupport from './json_models/social_support.json';
-import communicationQuality from './json_models/communication_quality.json';
-import boundaryDynamics from './json_models/boundary_dynamics.json';
-import workplaceCollaboration from './json_models/workplace_collaboration.json';
-import interpersonalBoundaries from './json_models/interpersonal_boundaries.json';
-import relationshipCommunication from './json_models/relationship_communication.json';
-import empathicConnection from './json_models/empathic_connection.json';
-import groupIdentityFormation from './json_models/group_identity_formation.json';
-
-// Create a models object using the original file names
-const jsonModels = {
-  'wolfchickens.json': wolfchickens,
-  'wolfchickenworm.json': wolfchickenworm,
-  'wormedwolves.json': wormedwolves,
-  'causal-loop-json.json': causalLoopJson,
-  'team_dynamics.json': teamDynamics,
-  'conflict_resolution.json': conflictResolution,
-  'mediation_dynamics.json': mediationDynamics,
-  'communication_pathways.json': communicationPathways,
-  'tension_escalation.json': tensionEscalation,
-  'peace_building.json': peaceBuilding,
-  'trust_building.json': trustBuilding,
-  'emotional_intelligence.json': emotionalIntelligence,
-  'social_support.json': socialSupport,
-  'communication_quality.json': communicationQuality,
-  'boundary_dynamics.json': boundaryDynamics,
-  'workplace_collaboration.json': workplaceCollaboration,
-  'interpersonal_boundaries.json': interpersonalBoundaries,
-  'relationship_communication.json': relationshipCommunication,
-  'empathic_connection.json': empathicConnection,
-  'group_identity_formation.json': groupIdentityFormation
-};
+import { jsonModels, formatModelName, getModelNames } from './utils/jsonModelLoader';
 
 // Modal component for displaying the larger Mermaid diagram
 const MermaidModal = ({ isOpen, onClose, model, title }) => {
@@ -391,7 +346,11 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
 };
 
 const UnifiedInterface = () => {
-  const [selectedModel, setSelectedModel] = useState(null);
+  const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
+  const [modelNames, setModelNames] = useState([]);
+  const [showAdvancedMermaid, setShowAdvancedMermaid] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [feedbackModel, setFeedbackModel] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalModel, setModalModel] = useState(null);
   const [modalTitle, setModalTitle] = useState('');
@@ -400,9 +359,16 @@ const UnifiedInterface = () => {
   const [libraryOpen, setLibraryOpen] = useState(false);
   
   // Add state for feedback modal
-  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
-  const [feedbackModel, setFeedbackModel] = useState(null);
   const [feedbackTitle, setFeedbackTitle] = useState('');
+  
+  useEffect(() => {
+    // Load model names using the utility function
+    setModelNames(getModelNames());
+    // Set default selected model if needed
+    if (!selectedModel && modelNames.length > 0) {
+      setSelectedModel(modelNames[0]);
+    }
+  }, []);
   
   // Handler to open modal with a specific model
   const handleExpandModel = (model, title) => {
@@ -422,19 +388,10 @@ const UnifiedInterface = () => {
   // Handler for submitting feedback and stealing the model
   const handleStealSubmit = (feedback) => {
     console.log('User feedback:', feedback);
-    setSelectedModel(Object.keys(jsonModels).find(key => jsonModels[key] === feedbackModel));
+    setSelectedModel(getModelNames().find(key => jsonModels[key] === feedbackModel));
     setFeedbackModalOpen(false);
   };
   
-  // Format model name by removing .json extension and adding spaces
-  const formatModelName = (filename) => {
-    return filename
-      .replace('.json', '')
-      .split(/(?=[A-Z])|[-_]/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
   // Get placeholder description for model
   const getModelDescription = (filename) => {
     // Placeholder descriptions that could be replaced with actual descriptions later
@@ -466,15 +423,31 @@ const UnifiedInterface = () => {
   
   // Sidebar component for model selection with Mermaid visualizations
   const ModelSidebar = () => {
+    // Add searchTerm state here
     const [searchTerm, setSearchTerm] = useState('');
+    // Add ref to maintain focus
+    const searchInputRef = useRef(null);
     
-    // Filter models based on search term
-    const filteredModels = Object.keys(jsonModels).filter(filename => {
-      const displayName = formatModelName(filename).toLowerCase();
-      const description = getModelDescription(filename).toLowerCase();
-      const search = searchTerm.toLowerCase();
-      
-      return displayName.includes(search) || description.includes(search);
+    // Memoize filtered models calculation
+    const filteredModels = useMemo(() => {
+      return getModelNames().filter(filename => {
+        const displayName = formatModelName(filename).toLowerCase();
+        const description = getModelDescription(filename).toLowerCase();
+        const search = searchTerm.toLowerCase();
+        
+        return displayName.includes(search) || description.includes(search);
+      });
+    }, [searchTerm]); // Only recalculate when searchTerm changes
+    
+    // Add effect to maintain focus after render
+    useEffect(() => {
+      // If we have a ref to the search input and it should have focus
+      if (searchInputRef.current && document.activeElement === searchInputRef.current) {
+        // Keep the focus and cursor position
+        const cursorPosition = searchInputRef.current.selectionStart;
+        searchInputRef.current.focus();
+        searchInputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }
     });
     
     return (
@@ -491,6 +464,7 @@ const UnifiedInterface = () => {
         <div className="mb-4">
           <div className="relative">
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search models..."
               value={searchTerm}
