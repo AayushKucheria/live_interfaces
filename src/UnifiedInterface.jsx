@@ -373,13 +373,6 @@ const SideWheel = () => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [hoverOption, setHoverOption] = useState(null);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [hiddenOptions, setHiddenOptions] = useState([]);
-  const [notes, setNotes] = useState({});
-  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
-  const [activeNoteOption, setActiveNoteOption] = useState(null);
-  const [noteText, setNoteText] = useState('');
-  const [animatingNotes, setAnimatingNotes] = useState(false);
-  const [flingTargets, setFlingTargets] = useState([]);
   const wheelRef = useRef(null);
   
   // Expanded list of options with many more items
@@ -406,9 +399,6 @@ const SideWheel = () => {
     { id: 'M20', label: 'M20', description: 'Publish' }
   ];
 
-  // Filter out hidden options
-  const visibleOptions = options.filter(option => !hiddenOptions.includes(option.id));
-
   const CARD_HEIGHT = 200; // Increased card height (3x)
   const CARD_SPACING = 40; // Space between cards
   const TOTAL_ITEM_HEIGHT = CARD_HEIGHT + CARD_SPACING;
@@ -419,62 +409,13 @@ const SideWheel = () => {
     console.log(`Selected option: ${option.label} - ${option.description}`);
   };
 
-  // Handle removing an option
-  const handleRemoveOption = (optionId) => {
-    setHiddenOptions([...hiddenOptions, optionId]);
-    
-    // If the removed option was selected, clear selection
-    if (optionId === selectedOption) {
-      setSelectedOption(null);
-    }
-    
-    // Adjust scroll position to account for the removed item
-    // This ensures smooth transition when an item is removed
-    const removedIndex = options.findIndex(opt => opt.id === optionId);
-    const scrollAdjustment = Math.abs(scrollPosition) % (options.length * TOTAL_ITEM_HEIGHT);
-    const currentVisibleIndex = Math.floor(scrollAdjustment / TOTAL_ITEM_HEIGHT);
-    
-    if (removedIndex <= currentVisibleIndex) {
-      setScrollPosition(scrollPosition + TOTAL_ITEM_HEIGHT);
-    }
-  };
-
-  // Handle edit button click to add a note
-  const handleEditClick = (optionId) => {
-    setActiveNoteOption(optionId);
-    setNoteText(notes[optionId] || '');
-    setNoteDialogOpen(true);
-  };
-
-  // Save note text
-  const saveNote = () => {
-    if (activeNoteOption && noteText.trim()) {
-      setNotes({...notes, [activeNoteOption]: noteText});
-    }
-    closeNoteDialog();
-  };
-
-  // Close note dialog
-  const closeNoteDialog = () => {
-    setNoteDialogOpen(false);
-    setActiveNoteOption(null);
-    setNoteText('');
-  };
-
-  // Function to restore all hidden options
-  const restoreAllOptions = () => {
-    setHiddenOptions([]);
-  };
-
   const handleWheel = (e) => {
     if (wheelRef.current) {
       e.preventDefault();
       const newPosition = scrollPosition + e.deltaY;
       
       // Calculate total scroll height for all items
-      const totalHeight = visibleOptions.length * TOTAL_ITEM_HEIGHT;
-      
-      if (totalHeight === 0) return; // No visible options
+      const totalHeight = options.length * TOTAL_ITEM_HEIGHT;
       
       // Implement cyclic scrolling
       let adjustedPosition = newPosition % totalHeight;
@@ -488,85 +429,11 @@ const SideWheel = () => {
   
   // Function to get cyclic index
   const getCyclicIndex = (index, length) => {
-    if (length === 0) return -1; // Handle empty array case
     return ((index % length) + length) % length;
-  };
-  
-  // Handle compose button click
-  const handleComposeClick = () => {
-    // Find all visible options with notes
-    const visibleIndices = [];
-    const targets = [];
-    
-    // Calculate which items are currently visible
-    const scrollAdjustment = Math.abs(scrollPosition) % (visibleOptions.length * TOTAL_ITEM_HEIGHT);
-    const currentVisibleIndex = Math.floor(scrollAdjustment / TOTAL_ITEM_HEIGHT);
-    
-    // Find visible items with notes
-    for (let i = 0; i < VISIBLE_ITEMS; i++) {
-      const index = getCyclicIndex(currentVisibleIndex + i, visibleOptions.length);
-      if (index !== -1) {
-        const option = visibleOptions[index];
-        if (notes[option.id]) {
-          visibleIndices.push(index);
-          targets.push(option.id);
-        }
-      }
-    }
-    
-    if (targets.length > 0) {
-      setFlingTargets(targets);
-      setAnimatingNotes(true);
-      
-      // Clear the notes after animation completes
-      setTimeout(() => {
-        const updatedNotes = {...notes};
-        targets.forEach(id => {
-          delete updatedNotes[id];
-        });
-        setNotes(updatedNotes);
-        setAnimatingNotes(false);
-        setFlingTargets([]);
-      }, 600); // Animation duration + small buffer
-    }
   };
   
   return (
     <div className="h-full relative overflow-hidden" onWheel={handleWheel}>
-      {/* Note input dialog */}
-      {noteDialogOpen && (
-        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-20">
-          <div className="bg-white rounded-lg shadow-lg p-4 max-w-xs w-full">
-            <h4 className="text-sm font-medium mb-2">Add note</h4>
-            <textarea
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value.slice(0, 200))}
-              className="w-full border border-gray-300 rounded p-2 text-sm"
-              placeholder="Enter note (max 200 characters)"
-              rows={3}
-              maxLength={200}
-            />
-            <div className="flex justify-between items-center mt-3">
-              <div className="text-xs text-gray-500">{noteText.length}/200</div>
-              <div className="flex space-x-2">
-                <button 
-                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300"
-                  onClick={closeNoteDialog}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
-                  onClick={saveNote}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
       {/* Roulette wheel background structure - wider to accommodate larger cards */}
       <div 
         className="absolute inset-0 bg-gradient-to-r from-gray-100 to-white"
@@ -616,177 +483,78 @@ const SideWheel = () => {
         </div>
       </div>
       
-      {/* Restore button - only visible when there are hidden options */}
-      {hiddenOptions.length > 0 && (
-        <div 
-          className="absolute top-4 right-4 z-20 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs cursor-pointer hover:bg-blue-200"
-          onClick={restoreAllOptions}
-        >
-          Restore All ({hiddenOptions.length})
-        </div>
-      )}
-      
-      {/* Compose button - moved to bottom left */}
-      {Object.keys(notes).length > 0 && (
-        <div 
-          className="absolute bottom-4 left-4 z-20 px-2 py-1 bg-green-600 text-white rounded-md text-xs cursor-pointer hover:bg-green-700"
-          onClick={handleComposeClick}
-        >
-          Compose {Object.keys(notes).length}
-        </div>
-      )}
-      
       {/* Items container with cyclic scrolling */}
       <div 
         ref={wheelRef}
         className="absolute inset-0 flex flex-col items-center justify-center"
       >
-        {visibleOptions.length === 0 ? (
-          <div className="bg-white p-4 rounded-md shadow-md text-center">
-            <p className="text-gray-600 mb-2">All items hidden</p>
-            <button 
-              className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-              onClick={restoreAllOptions}
-            >
-              Restore All
-            </button>
-          </div>
-        ) : (
-          <div 
-            className="relative w-full h-full"
-            style={{
-              transition: 'transform 0.3s ease-out',
-              transform: `translateY(${scrollPosition}px)`
-            }}
-          >
-            {/* Generate extra items for smooth cyclic scrolling */}
-            {[...Array(VISIBLE_ITEMS + 3)].map((_, i) => {
-              const virtualIndex = Math.floor(Math.abs(scrollPosition) / TOTAL_ITEM_HEIGHT) - 1 + i;
-              const actualIndex = getCyclicIndex(virtualIndex, visibleOptions.length);
-              if (actualIndex === -1) return null; // If no visible options
-              
-              const option = visibleOptions[actualIndex];
-              const hasNote = notes[option.id] !== undefined;
-              const isAnimating = animatingNotes && flingTargets.includes(option.id);
-              
-              const basePosition = virtualIndex * TOTAL_ITEM_HEIGHT;
-              const adjustedPosition = basePosition + scrollPosition;
-              
-              // Calculate visibility and position
-              const yCenter = window.innerHeight / 2;
-              const distFromCenter = adjustedPosition - yCenter;
-              const xOffset = Math.pow(Math.abs(distFromCenter) / 400, 2) * 20;
-              const isInView = Math.abs(distFromCenter) < yCenter + CARD_HEIGHT;
-              const opacity = isInView ? 1 : 0;
-              
-              const isSelected = option.id === selectedOption;
-              const isHovered = option.id === hoverOption;
-              
-              // Animation styles for flinging to center
-              const animationStyle = isAnimating ? {
-                transform: 'translateX(100vw) scale(0.8)',
-                opacity: 0,
-                transition: 'all 4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-              } : {};
-              
-              return (
-                <div 
-                  key={`${option.id}-${virtualIndex}`}
-                  className={`absolute flex items-start justify-start px-8 py-6
-                           transition-all duration-200 cursor-pointer rounded-lg
-                           ${isSelected 
-                             ? 'bg-blue-600 text-white shadow-lg' 
-                             : isHovered && isInView
-                               ? 'bg-blue-100 text-blue-800 shadow-md' 
-                               : 'bg-white text-blue-700 border border-gray-100'
-                           }`}
-                  style={{
-                    top: `${basePosition}px`,
-                    left: `${xOffset}px`,
-                    width: 'calc(100% - 20px)',
-                    height: `${CARD_HEIGHT}px`,
-                    zIndex: isSelected ? 20 : isHovered ? 15 : 10,
-                    opacity: opacity,
-                    transform: `translateX(0) rotate(${distFromCenter !== 0 ? (distFromCenter / yCenter) * 0.5 : 0}deg)`,
-                    transformOrigin: 'left center',
-                    pointerEvents: isInView ? 'auto' : 'none',
-                    ...animationStyle
-                  }}
-                  onClick={() => isInView && handleOptionClick(option)}
-                  onMouseEnter={() => isInView && setHoverOption(option.id)}
-                  onMouseLeave={() => isInView && setHoverOption(null)}
-                  title={option.description}
-                >
-                  <div className="flex flex-col w-full h-full relative">
-                    {/* Remove (X) button in top left corner */}
-                    <div 
-                      className={`absolute top-0 left-0 w-6 h-6 rounded-full flex items-center justify-center
-                      ${isSelected ? 'bg-white bg-opacity-20' : 'bg-gray-100'} hover:bg-red-200 z-10`}
-                      style={{ top: '-3px', left: '-3px' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveOption(option.id);
-                      }}
-                    >
-                      <svg 
-                        className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-gray-600'} hover:text-red-600`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </div>
-                    
-                    <div className={`flex items-center justify-center h-12 w-32 rounded-full
-                      ${isSelected ? 'bg-white bg-opacity-20' : 'bg-blue-50'}
-                    `}>
-                      <span className={`font-medium text-lg ${isSelected ? 'text-white' : 'text-blue-600'}`}>
-                        {option.label}
-                      </span>
-                    </div>
-                    
-                    {/* Note preview area */}
-                    {hasNote && (
-                      <div className="p-2 mt-2 text-xs text-gray-600 italic bg-green-50 rounded max-h-24 overflow-hidden">
-                        {notes[option.id]}
-                      </div>
-                    )}
-                    
-                    <div className="flex-1"></div>
-                    
-                    {/* Edit icon in bottom right corner - moved closer to corner */}
-                    <div 
-                      className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center
-                      ${isSelected ? 'bg-white bg-opacity-20' : 'bg-gray-100'} 
-                      hover:bg-blue-200
-                      ${hasNote ? 'ring-2 ring-green-400 shadow-lg shadow-green-200' : ''}`}
-                      style={{ bottom: '-3px', right: '-3px' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditClick(option.id);
-                      }}
-                    >
-                      <svg 
-                        className={`w-3 h-3 ${isSelected ? 'text-white' : hasNote ? 'text-green-600' : 'text-blue-600'}`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" 
-                        />
-                      </svg>
-                    </div>
+        <div 
+          className="relative w-full h-full"
+          style={{
+            transition: 'transform 0.3s ease-out',
+            transform: `translateY(${scrollPosition}px)`
+          }}
+        >
+          {/* Generate extra items for smooth cyclic scrolling */}
+          {[...Array(VISIBLE_ITEMS + 3)].map((_, i) => {
+            const virtualIndex = Math.floor(Math.abs(scrollPosition) / TOTAL_ITEM_HEIGHT) - 1 + i;
+            const actualIndex = getCyclicIndex(virtualIndex, options.length);
+            const option = options[actualIndex];
+            
+            const basePosition = virtualIndex * TOTAL_ITEM_HEIGHT;
+            const adjustedPosition = basePosition + scrollPosition;
+            
+            // Calculate visibility and position
+            const yCenter = window.innerHeight / 2;
+            const distFromCenter = adjustedPosition - yCenter;
+            const xOffset = Math.pow(Math.abs(distFromCenter) / 400, 2) * 20;
+            const isInView = Math.abs(distFromCenter) < yCenter + CARD_HEIGHT;
+            const opacity = isInView ? 1 : 0;
+            
+            const isSelected = option.id === selectedOption;
+            const isHovered = option.id === hoverOption;
+            
+            return (
+              <div 
+                key={`${option.id}-${virtualIndex}`}
+                className={`absolute flex items-start justify-start px-8 py-6
+                         transition-all duration-200 cursor-pointer rounded-lg
+                         ${isSelected 
+                           ? 'bg-blue-600 text-white shadow-lg' 
+                           : isHovered && isInView
+                             ? 'bg-blue-100 text-blue-800 shadow-md' 
+                             : 'bg-white text-blue-700 border border-gray-100'
+                         }`}
+                style={{
+                  top: `${basePosition}px`,
+                  left: `${xOffset}px`,
+                  width: 'calc(100% - 20px)',
+                  height: `${CARD_HEIGHT}px`,
+                  zIndex: isSelected ? 20 : isHovered ? 15 : 10,
+                  opacity: opacity,
+                  transform: `translateX(0) rotate(${distFromCenter !== 0 ? (distFromCenter / yCenter) * 0.5 : 0}deg)`,
+                  transformOrigin: 'left center',
+                  pointerEvents: isInView ? 'auto' : 'none',
+                }}
+                onClick={() => isInView && handleOptionClick(option)}
+                onMouseEnter={() => isInView && setHoverOption(option.id)}
+                onMouseLeave={() => isInView && setHoverOption(null)}
+                title={option.description}
+              >
+                <div className="flex flex-col w-full h-full">
+                  <div className={`flex items-center justify-center h-16 rounded-full
+                    ${isSelected ? 'bg-white bg-opacity-20' : 'bg-blue-50'}`
+                  }>
+                    <span className={`font-medium text-2xl ${isSelected ? 'text-white' : 'text-blue-600'}`}>
+                      {option.label}
+                    </span>
                   </div>
+                  <div className="flex-1"></div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -1000,11 +768,26 @@ const UnifiedInterface = () => {
       <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col overflow-hidden">
         {/* Header with title and expand/collapse indicator */}
         <div className="flex justify-between items-center mb-4">
-          <button 
-            onClick={() => setLibraryOpen(true)}
+        <button 
+          onClick={() => setLibraryOpen(true)}
             className="text-lg font-semibold text-gray-700 hover:text-blue-600 focus:outline-none text-left"
+        >
+          Available Models
+        </button>
+          
+          <button
+            onClick={() => {
+              const nextMode = viewMode === 'detail' ? 'composition' 
+                : viewMode === 'composition' ? 'overview' 
+                : 'detail';
+              handleViewModeChange(nextMode);
+            }}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            title="Toggle view"
           >
-            Available Models
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={viewMode === 'overview' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+            </svg>
           </button>
         </div>
         
@@ -1091,13 +874,54 @@ const UnifiedInterface = () => {
       
       {/* Main content with sidebar layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Main visualization area with Loopy */}
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="bg-white rounded-lg shadow-md p-6 h-full">
-            <LoopyVisualizer 
-              model={selectedModel ? jsonModels[selectedModel] : null} 
-              title="Loopy Interactive Model" 
-            />
+        {/* Left sidebar with wheel (only visible in detail view) */}
+        {sidebarWidth < 32 && (
+          <aside className="w-56 transition-all duration-300 ease-in-out">
+            <SideWheel />
+          </aside>
+        )}
+        
+        {/* Main visualization area with Loopy or placeholder */}
+        <main 
+          className="transition-all duration-300 ease-in-out overflow-auto p-6 flex-1"
+          style={{ width: sidebarWidth < 32 ? `calc(100% - ${sidebarWidth}% - 56px)` : `calc(100% - ${sidebarWidth}%)` }}
+        >
+          <div className="bg-white rounded-lg shadow-md p-6 h-full relative">
+            {isLoopyVisible ? (
+              <>
+                {/* Visual indicator connecting the side wheel to Loopy interface */}
+                {sidebarWidth < 32 && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-6 w-6 h-32 flex items-center justify-start">
+                    <svg width="24" height="120" viewBox="0 0 24 120" fill="none">
+                      <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" fill="#f9fafb" />
+                      <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" stroke="#e5e7eb" strokeWidth="1" fill="none" />
+                    </svg>
+                  </div>
+                )}
+                <LoopyVisualizer 
+                  model={selectedModel ? jsonModels[selectedModel] : null} 
+                  title="Loopy Interactive Model" 
+                />
+              </>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                  <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-700 mb-2">Loopy Visualizer Hidden</h3>
+                <p className="text-gray-500 max-w-xs">
+                  The visualizer is hidden in this expanded view mode. Return to detail view to interact with the Loopy model.
+                </p>
+                <button 
+                  onClick={() => handleViewModeChange('detail')}
+                  className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Return to Detail View
+                </button>
+              </div>
+            )}
           </div>
         </main>
         
