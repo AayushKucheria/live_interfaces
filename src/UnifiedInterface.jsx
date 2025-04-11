@@ -368,6 +368,430 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
   );
 };
 
+// Side wheel component with curved list of options
+const SideWheel = () => {
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [hoverOption, setHoverOption] = useState(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [hiddenOptions, setHiddenOptions] = useState([]);
+  const [notes, setNotes] = useState({});
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [activeNoteOption, setActiveNoteOption] = useState(null);
+  const [noteText, setNoteText] = useState('');
+  const [animatingNotes, setAnimatingNotes] = useState(false);
+  const [flingTargets, setFlingTargets] = useState([]);
+  const wheelRef = useRef(null);
+  
+  // Expanded list of options with many more items
+  const options = [
+    { id: 'M1', label: 'M1', description: 'Visualization' },
+    { id: 'M2', label: 'M2', description: 'Properties' },
+    { id: 'M3', label: 'M3', description: 'Elements' },
+    { id: 'M4', label: 'M4', description: 'Relations' },
+    { id: 'M5', label: 'M5', description: 'Simulation' },
+    { id: 'M6', label: 'M6', description: 'Share' },
+    { id: 'M7', label: 'M7', description: 'Export' },
+    { id: 'M8', label: 'M8', description: 'Templates' },
+    { id: 'M9', label: 'M9', description: 'Settings' },
+    { id: 'M10', label: 'M10', description: 'Analysis' },
+    { id: 'M11', label: 'M11', description: 'Compare' },
+    { id: 'M12', label: 'M12', description: 'History' },
+    { id: 'M13', label: 'M13', description: 'Permissions' },
+    { id: 'M14', label: 'M14', description: 'Import' },
+    { id: 'M15', label: 'M15', description: 'Preview' },
+    { id: 'M16', label: 'M16', description: 'Graphics' },
+    { id: 'M17', label: 'M17', description: 'Optimize' },
+    { id: 'M18', label: 'M18', description: 'Collaborate' },
+    { id: 'M19', label: 'M19', description: 'Validate' },
+    { id: 'M20', label: 'M20', description: 'Publish' }
+  ];
+
+  // Filter out hidden options
+  const visibleOptions = options.filter(option => !hiddenOptions.includes(option.id));
+
+  const CARD_HEIGHT = 200; // Increased card height (3x)
+  const CARD_SPACING = 40; // Space between cards
+  const TOTAL_ITEM_HEIGHT = CARD_HEIGHT + CARD_SPACING;
+  const VISIBLE_ITEMS = 4; // Number of fully visible items
+  
+  const handleOptionClick = (option) => {
+    setSelectedOption(option.id === selectedOption ? null : option.id);
+    console.log(`Selected option: ${option.label} - ${option.description}`);
+  };
+
+  // Handle removing an option
+  const handleRemoveOption = (optionId) => {
+    setHiddenOptions([...hiddenOptions, optionId]);
+    
+    // If the removed option was selected, clear selection
+    if (optionId === selectedOption) {
+      setSelectedOption(null);
+    }
+    
+    // Adjust scroll position to account for the removed item
+    // This ensures smooth transition when an item is removed
+    const removedIndex = options.findIndex(opt => opt.id === optionId);
+    const scrollAdjustment = Math.abs(scrollPosition) % (options.length * TOTAL_ITEM_HEIGHT);
+    const currentVisibleIndex = Math.floor(scrollAdjustment / TOTAL_ITEM_HEIGHT);
+    
+    if (removedIndex <= currentVisibleIndex) {
+      setScrollPosition(scrollPosition + TOTAL_ITEM_HEIGHT);
+    }
+  };
+
+  // Handle edit button click to add a note
+  const handleEditClick = (optionId) => {
+    setActiveNoteOption(optionId);
+    setNoteText(notes[optionId] || '');
+    setNoteDialogOpen(true);
+  };
+
+  // Save note text
+  const saveNote = () => {
+    if (activeNoteOption && noteText.trim()) {
+      setNotes({...notes, [activeNoteOption]: noteText});
+    }
+    closeNoteDialog();
+  };
+
+  // Close note dialog
+  const closeNoteDialog = () => {
+    setNoteDialogOpen(false);
+    setActiveNoteOption(null);
+    setNoteText('');
+  };
+
+  // Function to restore all hidden options
+  const restoreAllOptions = () => {
+    setHiddenOptions([]);
+  };
+
+  const handleWheel = (e) => {
+    if (wheelRef.current) {
+      e.preventDefault();
+      const newPosition = scrollPosition + e.deltaY;
+      
+      // Calculate total scroll height for all items
+      const totalHeight = visibleOptions.length * TOTAL_ITEM_HEIGHT;
+      
+      if (totalHeight === 0) return; // No visible options
+      
+      // Implement cyclic scrolling
+      let adjustedPosition = newPosition % totalHeight;
+      if (adjustedPosition > 0) {
+        adjustedPosition -= totalHeight;
+      }
+      
+      setScrollPosition(adjustedPosition);
+    }
+  };
+  
+  // Function to get cyclic index
+  const getCyclicIndex = (index, length) => {
+    if (length === 0) return -1; // Handle empty array case
+    return ((index % length) + length) % length;
+  };
+  
+  // Handle compose button click
+  const handleComposeClick = () => {
+    // Find all visible options with notes
+    const visibleIndices = [];
+    const targets = [];
+    
+    // Calculate which items are currently visible
+    const scrollAdjustment = Math.abs(scrollPosition) % (visibleOptions.length * TOTAL_ITEM_HEIGHT);
+    const currentVisibleIndex = Math.floor(scrollAdjustment / TOTAL_ITEM_HEIGHT);
+    
+    // Find visible items with notes
+    for (let i = 0; i < VISIBLE_ITEMS; i++) {
+      const index = getCyclicIndex(currentVisibleIndex + i, visibleOptions.length);
+      if (index !== -1) {
+        const option = visibleOptions[index];
+        if (notes[option.id]) {
+          visibleIndices.push(index);
+          targets.push(option.id);
+        }
+      }
+    }
+    
+    if (targets.length > 0) {
+      setFlingTargets(targets);
+      setAnimatingNotes(true);
+      
+      // Clear the notes after animation completes
+      setTimeout(() => {
+        const updatedNotes = {...notes};
+        targets.forEach(id => {
+          delete updatedNotes[id];
+        });
+        setNotes(updatedNotes);
+        setAnimatingNotes(false);
+        setFlingTargets([]);
+      }, 600); // Animation duration + small buffer
+    }
+  };
+  
+  return (
+    <div className="h-full relative overflow-hidden" onWheel={handleWheel}>
+      {/* Note input dialog */}
+      {noteDialogOpen && (
+        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black bg-opacity-20">
+          <div className="bg-white rounded-lg shadow-lg p-4 max-w-xs w-full">
+            <h4 className="text-sm font-medium mb-2">Add note</h4>
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value.slice(0, 200))}
+              className="w-full border border-gray-300 rounded p-2 text-sm"
+              placeholder="Enter note (max 200 characters)"
+              rows={3}
+              maxLength={200}
+            />
+            <div className="flex justify-between items-center mt-3">
+              <div className="text-xs text-gray-500">{noteText.length}/200</div>
+              <div className="flex space-x-2">
+                <button 
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300"
+                  onClick={closeNoteDialog}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                  onClick={saveNote}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Roulette wheel background structure - wider to accommodate larger cards */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-r from-gray-100 to-white"
+        style={{ clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0 100%)' }}
+      >
+        <div className="absolute left-0 top-0 w-full h-full overflow-hidden">
+          <svg width="100%" height="100%" viewBox="0 0 600 800" preserveAspectRatio="none">
+            {/* Main curve outline - adjusted for wider cards */}
+            <path 
+              d="M 60,20 Q 20,400 60,780" 
+              fill="none" 
+              stroke="#e5e7eb" 
+              strokeWidth="1.5"
+              className="opacity-80"
+            />
+            
+            {/* Radial lines - adjusted spacing for taller cards */}
+            {[...Array(40)].map((_, i) => {
+              const y = i * (CARD_HEIGHT / 4);
+              const x1 = 20;
+              const x2 = 100;
+              
+              return (
+                <line 
+                  key={i}
+                  x1={x1} 
+                  y1={y} 
+                  x2={x2} 
+                  y2={y} 
+                  stroke="#e5e7eb"  
+                  strokeWidth="0.5"
+                  strokeDasharray="1,2"
+                  className="opacity-50"
+                />
+              );
+            })}
+            
+            {/* Inner curve outline */}
+            <path 
+              d="M 40,40 Q 10,400 40,760" 
+              fill="none" 
+              stroke="#e5e7eb" 
+              strokeWidth="1"
+              className="opacity-60"
+            />
+          </svg>
+        </div>
+      </div>
+      
+      {/* Restore button - only visible when there are hidden options */}
+      {hiddenOptions.length > 0 && (
+        <div 
+          className="absolute top-4 right-4 z-20 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs cursor-pointer hover:bg-blue-200"
+          onClick={restoreAllOptions}
+        >
+          Restore All ({hiddenOptions.length})
+        </div>
+      )}
+      
+      {/* Compose button - moved to bottom left */}
+      {Object.keys(notes).length > 0 && (
+        <div 
+          className="absolute bottom-4 left-4 z-20 px-2 py-1 bg-green-600 text-white rounded-md text-xs cursor-pointer hover:bg-green-700"
+          onClick={handleComposeClick}
+        >
+          Compose {Object.keys(notes).length}
+        </div>
+      )}
+      
+      {/* Items container with cyclic scrolling */}
+      <div 
+        ref={wheelRef}
+        className="absolute inset-0 flex flex-col items-center justify-center"
+      >
+        {visibleOptions.length === 0 ? (
+          <div className="bg-white p-4 rounded-md shadow-md text-center">
+            <p className="text-gray-600 mb-2">All items hidden</p>
+            <button 
+              className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+              onClick={restoreAllOptions}
+            >
+              Restore All
+            </button>
+          </div>
+        ) : (
+          <div 
+            className="relative w-full h-full"
+            style={{
+              transition: 'transform 0.3s ease-out',
+              transform: `translateY(${scrollPosition}px)`
+            }}
+          >
+            {/* Generate extra items for smooth cyclic scrolling */}
+            {[...Array(VISIBLE_ITEMS + 3)].map((_, i) => {
+              const virtualIndex = Math.floor(Math.abs(scrollPosition) / TOTAL_ITEM_HEIGHT) - 1 + i;
+              const actualIndex = getCyclicIndex(virtualIndex, visibleOptions.length);
+              if (actualIndex === -1) return null; // If no visible options
+              
+              const option = visibleOptions[actualIndex];
+              const hasNote = notes[option.id] !== undefined;
+              const isAnimating = animatingNotes && flingTargets.includes(option.id);
+              
+              const basePosition = virtualIndex * TOTAL_ITEM_HEIGHT;
+              const adjustedPosition = basePosition + scrollPosition;
+              
+              // Calculate visibility and position
+              const yCenter = window.innerHeight / 2;
+              const distFromCenter = adjustedPosition - yCenter;
+              const xOffset = Math.pow(Math.abs(distFromCenter) / 400, 2) * 20;
+              const isInView = Math.abs(distFromCenter) < yCenter + CARD_HEIGHT;
+              const opacity = isInView ? 1 : 0;
+              
+              const isSelected = option.id === selectedOption;
+              const isHovered = option.id === hoverOption;
+              
+              // Animation styles for flinging to center
+              const animationStyle = isAnimating ? {
+                transform: 'translateX(100vw) scale(0.8)',
+                opacity: 0,
+                transition: 'all 4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+              } : {};
+              
+              return (
+                <div 
+                  key={`${option.id}-${virtualIndex}`}
+                  className={`absolute flex items-start justify-start px-8 py-6
+                           transition-all duration-200 cursor-pointer rounded-lg
+                           ${isSelected 
+                             ? 'bg-blue-600 text-white shadow-lg' 
+                             : isHovered && isInView
+                               ? 'bg-blue-100 text-blue-800 shadow-md' 
+                               : 'bg-white text-blue-700 border border-gray-100'
+                           }`}
+                  style={{
+                    top: `${basePosition}px`,
+                    left: `${xOffset}px`,
+                    width: 'calc(100% - 20px)',
+                    height: `${CARD_HEIGHT}px`,
+                    zIndex: isSelected ? 20 : isHovered ? 15 : 10,
+                    opacity: opacity,
+                    transform: `translateX(0) rotate(${distFromCenter !== 0 ? (distFromCenter / yCenter) * 0.5 : 0}deg)`,
+                    transformOrigin: 'left center',
+                    pointerEvents: isInView ? 'auto' : 'none',
+                    ...animationStyle
+                  }}
+                  onClick={() => isInView && handleOptionClick(option)}
+                  onMouseEnter={() => isInView && setHoverOption(option.id)}
+                  onMouseLeave={() => isInView && setHoverOption(null)}
+                  title={option.description}
+                >
+                  <div className="flex flex-col w-full h-full relative">
+                    {/* Remove (X) button in top left corner */}
+                    <div 
+                      className={`absolute top-0 left-0 w-6 h-6 rounded-full flex items-center justify-center
+                      ${isSelected ? 'bg-white bg-opacity-20' : 'bg-gray-100'} hover:bg-red-200 z-10`}
+                      style={{ top: '-3px', left: '-3px' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveOption(option.id);
+                      }}
+                    >
+                      <svg 
+                        className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-gray-600'} hover:text-red-600`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+                    
+                    <div className={`flex items-center justify-center h-12 w-32 rounded-full
+                      ${isSelected ? 'bg-white bg-opacity-20' : 'bg-blue-50'}
+                    `}>
+                      <span className={`font-medium text-lg ${isSelected ? 'text-white' : 'text-blue-600'}`}>
+                        {option.label}
+                      </span>
+                    </div>
+                    
+                    {/* Note preview area */}
+                    {hasNote && (
+                      <div className="p-2 mt-2 text-xs text-gray-600 italic bg-green-50 rounded max-h-24 overflow-hidden">
+                        {notes[option.id]}
+                      </div>
+                    )}
+                    
+                    <div className="flex-1"></div>
+                    
+                    {/* Edit icon in bottom right corner - moved closer to corner */}
+                    <div 
+                      className={`absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center
+                      ${isSelected ? 'bg-white bg-opacity-20' : 'bg-gray-100'} 
+                      hover:bg-blue-200
+                      ${hasNote ? 'ring-2 ring-green-400 shadow-lg shadow-green-200' : ''}`}
+                      style={{ bottom: '-3px', right: '-3px' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(option.id);
+                      }}
+                    >
+                      <svg 
+                        className={`w-3 h-3 ${isSelected ? 'text-white' : hasNote ? 'text-green-600' : 'text-blue-600'}`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth="2" 
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" 
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const UnifiedInterface = () => {
   const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
   const [modelNames, setModelNames] = useState([]);
@@ -607,45 +1031,45 @@ const UnifiedInterface = () => {
           {filteredModels.length > 0 ? (
             <div className={`${getGridClass()}`} style={getGridStyle()}>
               {filteredModels.map((filename) => {
-                const model = jsonModels[filename];
-                const isSelected = selectedModel === filename;
-                const displayName = formatModelName(filename);
-                const description = getModelDescription(filename);
-                
-                return (
-                  <div 
-                    key={filename}
-                    onClick={() => {
-                      handleExpandModel(model, displayName);
-                    }}
-                    className={`rounded-md cursor-pointer transition-all duration-200 ${
-                      isSelected 
-                        ? 'ring-2 ring-blue-500' 
-                        : 'hover:bg-blue-50'
-                      } h-full flex flex-col`}
-                  >
-                    <div className="p-3 border-b border-gray-200">
+              const model = jsonModels[filename];
+              const isSelected = selectedModel === filename;
+              const displayName = formatModelName(filename);
+              const description = getModelDescription(filename);
+              
+              return (
+                <div 
+                  key={filename}
+                  onClick={() => {
+                    handleExpandModel(model, displayName);
+                  }}
+                  className={`rounded-md cursor-pointer transition-all duration-200 ${
+                    isSelected 
+                      ? 'ring-2 ring-blue-500' 
+                      : 'hover:bg-blue-50'
+                    } h-full flex flex-col`}
+                >
+                  <div className="p-3 border-b border-gray-200">
                       <p className="font-medium text-gray-900 truncate">{displayName}</p>
                       {getGridColumns() === 1 && (
                         <>
-                          <p className="text-sm text-gray-600 mt-1">{description}</p>
-                          <button
-                            onClick={(e) => handleStealModel(e, model, displayName)}
-                            className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                          >
-                            Steal
-                          </button>
+                    <p className="text-sm text-gray-600 mt-1">{description}</p>
+                    <button
+                      onClick={(e) => handleStealModel(e, model, displayName)}
+                      className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                    >
+                      Steal
+                    </button>
                         </>
                       )}
-                    </div>
-                    <div className="flex-1 min-h-0">
-                      <MermaidPreview 
-                        model={model} 
-                        isSelected={isSelected}
-                      />
-                    </div>
                   </div>
-                );
+                    <div className="flex-1 min-h-0">
+                  <MermaidPreview 
+                    model={model} 
+                    isSelected={isSelected}
+                  />
+                    </div>
+                </div>
+              );
               })}
             </div>
           ) : (
