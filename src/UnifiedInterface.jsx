@@ -368,8 +368,6 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
   );
 };
 
-
-
 const UnifiedInterface = () => {
   const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
   const [modelNames, setModelNames] = useState([]);
@@ -578,13 +576,12 @@ const UnifiedInterface = () => {
       <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col overflow-hidden">
         {/* Header with title and expand/collapse indicator */}
         <div className="flex justify-between items-center mb-4">
-        <button 
-          onClick={() => setLibraryOpen(true)}
+          <button 
+            onClick={() => setLibraryOpen(true)}
             className="text-lg font-semibold text-gray-700 hover:text-blue-600 focus:outline-none text-left"
-        >
-          Available Models
-        </button>
-          
+          >
+            Available Models
+          </button>
         </div>
         
         {/* Search Bar */}
@@ -610,45 +607,45 @@ const UnifiedInterface = () => {
           {filteredModels.length > 0 ? (
             <div className={`${getGridClass()}`} style={getGridStyle()}>
               {filteredModels.map((filename) => {
-              const model = jsonModels[filename];
-              const isSelected = selectedModel === filename;
-              const displayName = formatModelName(filename);
-              const description = getModelDescription(filename);
-              
-              return (
-                <div 
-                  key={filename}
-                  onClick={() => {
-                    handleExpandModel(model, displayName);
-                  }}
-                  className={`rounded-md cursor-pointer transition-all duration-200 ${
-                    isSelected 
-                      ? 'ring-2 ring-blue-500' 
-                      : 'hover:bg-blue-50'
-                    } h-full flex flex-col`}
-                >
-                  <div className="p-3 border-b border-gray-200">
+                const model = jsonModels[filename];
+                const isSelected = selectedModel === filename;
+                const displayName = formatModelName(filename);
+                const description = getModelDescription(filename);
+                
+                return (
+                  <div 
+                    key={filename}
+                    onClick={() => {
+                      handleExpandModel(model, displayName);
+                    }}
+                    className={`rounded-md cursor-pointer transition-all duration-200 ${
+                      isSelected 
+                        ? 'ring-2 ring-blue-500' 
+                        : 'hover:bg-blue-50'
+                      } h-full flex flex-col`}
+                  >
+                    <div className="p-3 border-b border-gray-200">
                       <p className="font-medium text-gray-900 truncate">{displayName}</p>
                       {getGridColumns() === 1 && (
                         <>
-                    <p className="text-sm text-gray-600 mt-1">{description}</p>
-                    <button
-                      onClick={(e) => handleStealModel(e, model, displayName)}
-                      className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                    >
-                      Steal
-                    </button>
+                          <p className="text-sm text-gray-600 mt-1">{description}</p>
+                          <button
+                            onClick={(e) => handleStealModel(e, model, displayName)}
+                            className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                          >
+                            Steal
+                          </button>
                         </>
                       )}
-                  </div>
-                    <div className="flex-1 min-h-0">
-                  <MermaidPreview 
-                    model={model} 
-                    isSelected={isSelected}
-                  />
                     </div>
-                </div>
-              );
+                    <div className="flex-1 min-h-0">
+                      <MermaidPreview 
+                        model={model} 
+                        isSelected={isSelected}
+                      />
+                    </div>
+                  </div>
+                );
               })}
             </div>
           ) : (
@@ -669,50 +666,14 @@ const UnifiedInterface = () => {
       </header>
       
       {/* Main content with sidebar layout */}
-      <div className="flex flex-1 overflow-hidden">        
-        
-        
-        {/* Main visualization area with Loopy or placeholder */}
-        <main 
-          className="transition-all duration-300 ease-in-out overflow-auto p-6 flex-1"
-          style={{ width: sidebarWidth < 32 ? `calc(100% - ${sidebarWidth}% - 56px)` : `calc(100% - ${sidebarWidth}%)` }}
-        >
-          <div className="bg-white rounded-lg shadow-md p-6 h-full relative">
-            {isLoopyVisible ? (
-              <>
-                {/* Visual indicator connecting the side wheel to Loopy interface */}
-                {sidebarWidth < 32 && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-6 w-6 h-32 flex items-center justify-start">
-                    <svg width="24" height="120" viewBox="0 0 24 120" fill="none">
-                      <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" fill="#f9fafb" />
-                      <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" stroke="#e5e7eb" strokeWidth="1" fill="none" />
-                    </svg>
-                  </div>
-                )}
-                <LoopyVisualizer 
-                  model={selectedModel ? jsonModels[selectedModel] : null} 
-                  title="Loopy Interactive Model" 
-                />
-              </>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center">
-                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-700 mb-2">Loopy Visualizer Hidden</h3>
-                <p className="text-gray-500 max-w-xs">
-                  The visualizer is hidden in this expanded view mode. Return to detail view to interact with the Loopy model.
-                </p>
-                <button 
-                  onClick={() => handleViewModeChange('detail')}
-                  className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Return to Detail View
-                </button>
-              </div>
-            )}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Main visualization area with Loopy */}
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="bg-white rounded-lg shadow-md p-6 h-full">
+            <LoopyVisualizer 
+              model={selectedModel ? jsonModels[selectedModel] : null} 
+              title="Loopy Interactive Model" 
+            />
           </div>
         </main>
         
