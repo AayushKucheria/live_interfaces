@@ -157,6 +157,29 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
     setShowingComparison(false);
   };
   
+  // Dynamically determine grid columns based on width
+  const getGridColumns = () => {
+    if (sidebarWidth < 30) return 1;
+    if (sidebarWidth < 50) return 2;
+    if (sidebarWidth < 65) return 3;
+    return 4;
+  };
+  
+  // Get CSS grid template columns for proper sizing
+  const getGridStyle = () => {
+    const cols = getGridColumns();
+    return {
+      display: 'grid',
+      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+      gap: '1rem',
+    };
+  };
+  
+  // Get the appropriate grid class based on column count
+  const getGridClass = () => {
+    return 'auto-rows-max';
+  };
+  
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex flex-col overflow-auto">
       {/* Main content container with styling matching visualizer */}
@@ -273,7 +296,7 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
             {/* Scrollable model grid */}
             <div className="overflow-y-auto h-full">
               {/* Model Grid - all models in 3 columns */}
-              <div className="grid grid-cols-3 gap-6 mb-6">
+              <div className={`${getGridClass()}`} style={getGridStyle()}>
                 {Object.keys(models).map((filename, index) => {
                   const model = models[filename];
                   const displayName = formatModelName(filename);
@@ -345,6 +368,8 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
   );
 };
 
+
+
 const UnifiedInterface = () => {
   const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
   const [modelNames, setModelNames] = useState([]);
@@ -372,11 +397,101 @@ const UnifiedInterface = () => {
   // Add a new state for the view mode 
   const [viewMode, setViewMode] = useState('detail'); // Options: 'detail', 'composition', 'overview'
   
+  // Add state for sidebar width (1-4 models wide)
+  const [sidebarWidth, setSidebarWidth] = useState(25); // Width percentage (25% = detail, 40% = composition, 75% = overview)
+  const [isDragging, setIsDragging] = useState(false);
+  
   // Handle view mode changes
   const handleViewModeChange = (mode) => {
     console.log(`View mode changed to: ${mode}`);
     setViewMode(mode);
-    // In the future, this function will update the layout based on the selected view
+    
+    // Smoothly adjust sidebar width based on view mode
+    if (mode === 'detail') {
+      setSidebarWidth(25);
+    } else if (mode === 'composition') {
+      setSidebarWidth(40);
+    } else if (mode === 'overview') {
+      setSidebarWidth(75);
+    }
+  };
+  
+  // Update view mode based on sidebar width
+  const updateViewModeFromWidth = (width) => {
+    if (width < 32) {
+      setViewMode('detail');
+    } else if (width < 55) {
+      setViewMode('composition');
+    } else {
+      setViewMode('overview');
+    }
+  };
+  
+  // Handle mouse down on the resize handle
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  
+  // Handle mouse move while dragging
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    
+    const containerWidth = document.body.clientWidth;
+    const mouseX = e.clientX;
+    const newWidth = Math.round(100 - (mouseX / containerWidth * 100));
+    
+    // Limit minimum and maximum width
+    const limitedWidth = Math.max(15, Math.min(85, newWidth));
+    setSidebarWidth(limitedWidth);
+    updateViewModeFromWidth(limitedWidth);
+  };
+  
+  // Handle mouse up to end dragging
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+  
+  // Add event listeners for dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+  
+  // Determine if Loopy should be visible
+  const isLoopyVisible = sidebarWidth < 50;
+  
+  // Dynamically determine grid columns based on width
+  const getGridColumns = () => {
+    if (sidebarWidth < 30) return 1;
+    if (sidebarWidth < 50) return 2;
+    if (sidebarWidth < 65) return 3;
+    return 4;
+  };
+  
+  // Get CSS grid template columns for proper sizing
+  const getGridStyle = () => {
+    const cols = getGridColumns();
+    return {
+      display: 'grid',
+      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+      gap: '1rem',
+    };
+  };
+  
+  // Get the appropriate grid class based on column count
+  const getGridClass = () => {
+    return 'auto-rows-max';
   };
   
   // Handler to open modal with a specific model
@@ -461,13 +576,16 @@ const UnifiedInterface = () => {
     
     return (
       <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col overflow-hidden">
-        {/* Replace the title with a button that opens the library overlay */}
+        {/* Header with title and expand/collapse indicator */}
+        <div className="flex justify-between items-center mb-4">
         <button 
           onClick={() => setLibraryOpen(true)}
-          className="text-lg font-semibold mb-4 text-gray-700 hover:text-blue-600 focus:outline-none text-left"
+            className="text-lg font-semibold text-gray-700 hover:text-blue-600 focus:outline-none text-left"
         >
           Available Models
         </button>
+          
+        </div>
         
         {/* Search Bar */}
         <div className="mb-4">
@@ -488,9 +606,10 @@ const UnifiedInterface = () => {
           </div>
         </div>
         
-        <div className="space-y-6 flex-1 overflow-y-auto pr-2">
+        <div className="flex-1 overflow-y-auto pr-2">
           {filteredModels.length > 0 ? (
-            filteredModels.map((filename) => {
+            <div className={`${getGridClass()}`} style={getGridStyle()}>
+              {filteredModels.map((filename) => {
               const model = jsonModels[filename];
               const isSelected = selectedModel === filename;
               const displayName = formatModelName(filename);
@@ -506,10 +625,12 @@ const UnifiedInterface = () => {
                     isSelected 
                       ? 'ring-2 ring-blue-500' 
                       : 'hover:bg-blue-50'
-                  } mb-4`}
+                    } h-full flex flex-col`}
                 >
                   <div className="p-3 border-b border-gray-200">
-                    <p className="font-medium text-gray-900">{displayName}</p>
+                      <p className="font-medium text-gray-900 truncate">{displayName}</p>
+                      {getGridColumns() === 1 && (
+                        <>
                     <p className="text-sm text-gray-600 mt-1">{description}</p>
                     <button
                       onClick={(e) => handleStealModel(e, model, displayName)}
@@ -517,14 +638,19 @@ const UnifiedInterface = () => {
                     >
                       Steal
                     </button>
+                        </>
+                      )}
                   </div>
+                    <div className="flex-1 min-h-0">
                   <MermaidPreview 
                     model={model} 
                     isSelected={isSelected}
                   />
+                    </div>
                 </div>
               );
-            })
+              })}
+            </div>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">No models found matching "{searchTerm}"</p>
@@ -543,19 +669,72 @@ const UnifiedInterface = () => {
       </header>
       
       {/* Main content with sidebar layout */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Main visualization area with Loopy */}
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="bg-white rounded-lg shadow-md p-6 h-full">
-            <LoopyVisualizer 
-              model={selectedModel ? jsonModels[selectedModel] : null} 
-              title="Loopy Interactive Model" 
-            />
+      <div className="flex flex-1 overflow-hidden">        
+        
+        
+        {/* Main visualization area with Loopy or placeholder */}
+        <main 
+          className="transition-all duration-300 ease-in-out overflow-auto p-6 flex-1"
+          style={{ width: sidebarWidth < 32 ? `calc(100% - ${sidebarWidth}% - 56px)` : `calc(100% - ${sidebarWidth}%)` }}
+        >
+          <div className="bg-white rounded-lg shadow-md p-6 h-full relative">
+            {isLoopyVisible ? (
+              <>
+                {/* Visual indicator connecting the side wheel to Loopy interface */}
+                {sidebarWidth < 32 && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-6 w-6 h-32 flex items-center justify-start">
+                    <svg width="24" height="120" viewBox="0 0 24 120" fill="none">
+                      <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" fill="#f9fafb" />
+                      <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" stroke="#e5e7eb" strokeWidth="1" fill="none" />
+                    </svg>
+                  </div>
+                )}
+                <LoopyVisualizer 
+                  model={selectedModel ? jsonModels[selectedModel] : null} 
+                  title="Loopy Interactive Model" 
+                />
+              </>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                  <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-700 mb-2">Loopy Visualizer Hidden</h3>
+                <p className="text-gray-500 max-w-xs">
+                  The visualizer is hidden in this expanded view mode. Return to detail view to interact with the Loopy model.
+                </p>
+                <button 
+                  onClick={() => handleViewModeChange('detail')}
+                  className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Return to Detail View
+                </button>
+              </div>
+            )}
           </div>
         </main>
         
+        {/* Resize handle */}
+        <div 
+          className={`flex flex-col items-center justify-center py-6 cursor-col-resize hover:bg-blue-100 active:bg-blue-200 z-10 ${isDragging ? 'bg-blue-100' : 'bg-gray-50'}`}
+          onMouseDown={handleMouseDown}
+          style={{ width: '12px' }}
+        >
+          <div className="flex flex-col items-center space-y-1 opacity-50">
+            <div className="w-1 h-8 bg-gray-400 rounded-full"></div>
+            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+          </div>
+        </div>
+        
         {/* Right sidebar with model selection and Mermaid previews */}
-        <aside className="w-96 border-l border-gray-200 p-4 overflow-y-auto">
+        <aside 
+          className="border-l border-gray-200 p-4 overflow-y-auto transition-all duration-300 ease-in-out"
+          style={{ width: `${sidebarWidth}%` }}
+        >
           <ModelSidebar />
         </aside>
       </div>
@@ -564,9 +743,9 @@ const UnifiedInterface = () => {
       <div className="bg-white shadow-inner py-4 flex justify-center items-center">
         <div className="w-1/3 flex flex-col items-center">
           <div className="flex justify-between w-full mb-2">
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'detail' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Detail View</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'composition' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Composition</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'overview' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Overview</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${sidebarWidth < 32 ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Detail View</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${sidebarWidth >= 32 && sidebarWidth < 55 ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Composition</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${sidebarWidth >= 55 ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Overview</span>
           </div>
           <div className="relative w-full h-8">
             {/* Background track */}
@@ -577,54 +756,54 @@ const UnifiedInterface = () => {
               }}
             ></div>
             
-            {/* Colored progress track */}
+            {/* Slider track indicator */}
             <div 
-              className="absolute left-0 top-1/2 h-1 -mt-0.5 rounded-full transition-all duration-300"
+              className="absolute left-0 top-1/2 h-3 -mt-1.5 bg-white rounded-full shadow border border-gray-200 transition-all"
               style={{
-                width: viewMode === 'detail' ? '0%' : viewMode === 'composition' ? '50%' : '100%'
+                left: `calc(${((sidebarWidth - 15) / 70) * 100}% - 6px)`,
+                width: '12px'
               }}
             ></div>
-            
-            {/* Invisible range input */}
-            <input 
-              type="range" 
-              min="0" 
-              max="2" 
-              step="1"
-              value={viewMode === 'detail' ? 0 : viewMode === 'composition' ? 1 : 2}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                if (val === 0) handleViewModeChange('detail');
-                else if (val === 1) handleViewModeChange('composition');
-                else handleViewModeChange('overview');
-              }}
-              className="appearance-none absolute inset-0 w-full h-2 mt-3 opacity-0 cursor-pointer z-10"
-            />
             
             {/* Slider button markers */}
             <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
               <button 
                 className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'detail' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  ${sidebarWidth < 32 ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
                 onClick={() => handleViewModeChange('detail')}
               >
-                {viewMode === 'detail' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                {sidebarWidth < 32 && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </button>
               <button 
                 className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'composition' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  ${sidebarWidth >= 32 && sidebarWidth < 55 ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
                 onClick={() => handleViewModeChange('composition')}
               >
-                {viewMode === 'composition' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                {sidebarWidth >= 32 && sidebarWidth < 55 && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </button>
               <button 
                 className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'overview' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  ${sidebarWidth >= 55 ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
                 onClick={() => handleViewModeChange('overview')}
               >
-                {viewMode === 'overview' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                {sidebarWidth >= 55 && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </button>
             </div>
+            
+            {/* Continuous range input for direct sidebar width control */}
+            <input 
+              type="range" 
+              min="15" 
+              max="85" 
+              step="1"
+              value={sidebarWidth}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                setSidebarWidth(val);
+                updateViewModeFromWidth(val);
+              }}
+              className="appearance-none absolute inset-0 w-full h-2 mt-3 opacity-0 cursor-pointer z-10"
+            />
           </div>
         </div>
       </div>
