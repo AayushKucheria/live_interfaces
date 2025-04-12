@@ -1122,8 +1122,61 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm px-6 py-3">
+      <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">CatCoLab Loopy Visualizer</h1>
+        
+        {/* View mode selector - moved from footer to header */}
+        <div className="w-1/4 flex flex-col items-center">
+          <div className="flex justify-between w-full mb-1">
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'detail' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Detail View</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'composition' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Composition</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'overview' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Overview</span>
+          </div>
+          <div className="relative w-full h-8">
+            {/* Background track */}
+            <div 
+              className="absolute left-0 right-0 top-1/2 h-1 -mt-0.5 rounded-full"
+              style={{
+                background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899)'
+              }}
+            ></div>
+            
+            {/* Slider track indicator - snaps to one of three positions */}
+            <div 
+              className="absolute left-0 top-1/2 h-3 -mt-1.5 bg-white rounded-full shadow border border-gray-200 transition-all duration-300"
+              style={{
+                left: viewMode === 'detail' ? '0%' : viewMode === 'composition' ? '50%' : '100%',
+                transform: 'translateX(-50%)',
+                width: '12px'
+              }}
+            ></div>
+            
+            {/* Mode selection buttons */}
+            <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
+              <button 
+                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                  ${viewMode === 'detail' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('detail')}
+              >
+                {viewMode === 'detail' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+              </button>
+              <button 
+                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                  ${viewMode === 'composition' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('composition')}
+              >
+                {viewMode === 'composition' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+              </button>
+              <button 
+                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                  ${viewMode === 'overview' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('overview')}
+              >
+                {viewMode === 'overview' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+              </button>
+            </div>
+          </div>
+        </div>
       </header>
       
       {/* Main content with sidebar layout */}
@@ -1205,61 +1258,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         >
           <ModelSidebar />
         </aside>
-      </div>
-      
-      {/* Replace footer with view mode selector */}
-      <div className="bg-white shadow-inner py-4 flex justify-center items-center">
-        <div className="w-1/3 flex flex-col items-center">
-          <div className="flex justify-between w-full mb-2">
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'detail' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Detail View</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'composition' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Composition</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'overview' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Overview</span>
-          </div>
-          <div className="relative w-full h-8">
-            {/* Background track */}
-            <div 
-              className="absolute left-0 right-0 top-1/2 h-1 -mt-0.5 rounded-full"
-              style={{
-                background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899)'
-              }}
-            ></div>
-            
-            {/* Slider track indicator - snaps to one of three positions */}
-            <div 
-              className="absolute left-0 top-1/2 h-3 -mt-1.5 bg-white rounded-full shadow border border-gray-200 transition-all duration-300"
-              style={{
-                left: viewMode === 'detail' ? '0%' : viewMode === 'composition' ? '50%' : '100%',
-                transform: 'translateX(-50%)',
-                width: '12px'
-              }}
-            ></div>
-            
-            {/* Mode selection buttons */}
-            <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'detail' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('detail')}
-              >
-                {viewMode === 'detail' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'composition' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('composition')}
-              >
-                {viewMode === 'composition' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'overview' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('overview')}
-              >
-                {viewMode === 'overview' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
       
       {/* Modal for expanded Mermaid view */}
