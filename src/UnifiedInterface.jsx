@@ -421,192 +421,56 @@ const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
   );
 };
 
-// Side wheel component with curved list of options
-const SideWheel = () => {
+// Modification threads component with list of options
+const ModificationThreads = () => {
   const [selectedOption, setSelectedOption] = useState(null);
-  const [hoverOption, setHoverOption] = useState(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
-  const wheelRef = useRef(null);
-  
-  // Expanded list of options with many more items
+
+  // Simplified options - just keeping 3 main ones
   const options = [
     { id: 'M1', label: 'M1', description: 'Visualization' },
     { id: 'M2', label: 'M2', description: 'Properties' },
-    { id: 'M3', label: 'M3', description: 'Elements' },
-    { id: 'M4', label: 'M4', description: 'Relations' },
-    { id: 'M5', label: 'M5', description: 'Simulation' },
-    { id: 'M6', label: 'M6', description: 'Share' },
-    { id: 'M7', label: 'M7', description: 'Export' },
-    { id: 'M8', label: 'M8', description: 'Templates' },
-    { id: 'M9', label: 'M9', description: 'Settings' },
-    { id: 'M10', label: 'M10', description: 'Analysis' },
-    { id: 'M11', label: 'M11', description: 'Compare' },
-    { id: 'M12', label: 'M12', description: 'History' },
-    { id: 'M13', label: 'M13', description: 'Permissions' },
-    { id: 'M14', label: 'M14', description: 'Import' },
-    { id: 'M15', label: 'M15', description: 'Preview' },
-    { id: 'M16', label: 'M16', description: 'Graphics' },
-    { id: 'M17', label: 'M17', description: 'Optimize' },
-    { id: 'M18', label: 'M18', description: 'Collaborate' },
-    { id: 'M19', label: 'M19', description: 'Validate' },
-    { id: 'M20', label: 'M20', description: 'Publish' }
+    { id: 'M3', label: 'M3', description: 'Elements' }
   ];
-
-  const CARD_HEIGHT = 200; // Increased card height (3x)
-  const CARD_SPACING = 40; // Space between cards
-  const TOTAL_ITEM_HEIGHT = CARD_HEIGHT + CARD_SPACING;
-  const VISIBLE_ITEMS = 4; // Number of fully visible items
   
   const handleOptionClick = (option) => {
     setSelectedOption(option.id === selectedOption ? null : option.id);
     console.log(`Selected option: ${option.label} - ${option.description}`);
   };
-
-  const handleWheel = (e) => {
-    if (wheelRef.current) {
-      e.preventDefault();
-      const newPosition = scrollPosition + e.deltaY;
-      
-      // Calculate total scroll height for all items
-      const totalHeight = options.length * TOTAL_ITEM_HEIGHT;
-      
-      // Implement cyclic scrolling
-      let adjustedPosition = newPosition % totalHeight;
-      if (adjustedPosition > 0) {
-        adjustedPosition -= totalHeight;
-      }
-      
-      setScrollPosition(adjustedPosition);
-    }
-  };
-  
-  // Function to get cyclic index
-  const getCyclicIndex = (index, length) => {
-    return ((index % length) + length) % length;
-  };
   
   return (
-    <div className="h-full relative overflow-hidden" onWheel={handleWheel}>
-      {/* Roulette wheel background structure - wider to accommodate larger cards */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-r from-gray-100 to-white"
-        style={{ clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0 100%)' }}
-      >
-        <div className="absolute left-0 top-0 w-full h-full overflow-hidden">
-          <svg width="100%" height="100%" viewBox="0 0 600 800" preserveAspectRatio="none">
-            {/* Main curve outline - adjusted for wider cards */}
-            <path 
-              d="M 60,20 Q 20,400 60,780" 
-              fill="none" 
-              stroke="#e5e7eb" 
-              strokeWidth="1.5"
-              className="opacity-80"
-            />
-            
-            {/* Radial lines - adjusted spacing for taller cards */}
-            {[...Array(40)].map((_, i) => {
-              const y = i * (CARD_HEIGHT / 4);
-              const x1 = 20;
-              const x2 = 100;
-              
-              return (
-                <line 
-                  key={i}
-                  x1={x1} 
-                  y1={y} 
-                  x2={x2} 
-                  y2={y} 
-                  stroke="#e5e7eb"  
-                  strokeWidth="0.5"
-                  strokeDasharray="1,2"
-                  className="opacity-50"
-                />
-              );
-            })}
-            
-            {/* Inner curve outline */}
-            <path 
-              d="M 40,40 Q 10,400 40,760" 
-              fill="none" 
-              stroke="#e5e7eb" 
-              strokeWidth="1"
-              className="opacity-60"
-            />
-          </svg>
-        </div>
-      </div>
+    <div className="h-full flex flex-col p-4 gap-4 overflow-auto">
+      {options.map((option) => {
+        const isSelected = option.id === selectedOption;
+        
+        return (
+          <div 
+            key={option.id}
+            className={`flex flex-col p-6 rounded-lg shadow-sm cursor-pointer transition-all duration-200
+              ${isSelected 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white text-blue-700 border border-gray-100 hover:bg-blue-50'
+              }`}
+            onClick={() => handleOptionClick(option)}
+          >
+            <div className={`flex items-center justify-center h-12 w-12 rounded-full mb-4
+              ${isSelected ? 'bg-white bg-opacity-20' : 'bg-blue-50'}`
+            }>
+              <span className={`font-medium text-xl ${isSelected ? 'text-white' : 'text-blue-600'}`}>
+                {option.label}
+              </span>
+            </div>
+            <span className="font-medium">{option.description}</span>
+          </div>
+        );
+      })}
       
-      {/* Items container with cyclic scrolling */}
-      <div 
-        ref={wheelRef}
-        className="absolute inset-0 flex flex-col items-center justify-center"
-      >
-        <div 
-          className="relative w-full h-full"
-          style={{
-            transition: 'transform 0.3s ease-out',
-            transform: `translateY(${scrollPosition}px)`
-          }}
-        >
-          {/* Generate extra items for smooth cyclic scrolling */}
-          {[...Array(VISIBLE_ITEMS + 3)].map((_, i) => {
-            const virtualIndex = Math.floor(Math.abs(scrollPosition) / TOTAL_ITEM_HEIGHT) - 1 + i;
-            const actualIndex = getCyclicIndex(virtualIndex, options.length);
-            const option = options[actualIndex];
-            
-            const basePosition = virtualIndex * TOTAL_ITEM_HEIGHT;
-            const adjustedPosition = basePosition + scrollPosition;
-            
-            // Calculate visibility and position
-            const yCenter = window.innerHeight / 2;
-            const distFromCenter = adjustedPosition - yCenter;
-            const xOffset = Math.pow(Math.abs(distFromCenter) / 400, 2) * 20;
-            const isInView = Math.abs(distFromCenter) < yCenter + CARD_HEIGHT;
-            const opacity = isInView ? 1 : 0;
-            
-            const isSelected = option.id === selectedOption;
-            const isHovered = option.id === hoverOption;
-            
-            return (
-              <div 
-                key={`${option.id}-${virtualIndex}`}
-                className={`absolute flex items-start justify-start px-8 py-6
-                         transition-all duration-200 cursor-pointer rounded-lg
-                         ${isSelected 
-                           ? 'bg-blue-600 text-white shadow-lg' 
-                           : isHovered && isInView
-                             ? 'bg-blue-100 text-blue-800 shadow-md' 
-                             : 'bg-white text-blue-700 border border-gray-100'
-                         }`}
-                style={{
-                  top: `${basePosition}px`,
-                  left: `${xOffset}px`,
-                  width: 'calc(100% - 20px)',
-                  height: `${CARD_HEIGHT}px`,
-                  zIndex: isSelected ? 20 : isHovered ? 15 : 10,
-                  opacity: opacity,
-                  transform: `translateX(0) rotate(${distFromCenter !== 0 ? (distFromCenter / yCenter) * 0.5 : 0}deg)`,
-                  transformOrigin: 'left center',
-                  pointerEvents: isInView ? 'auto' : 'none',
-                }}
-                onClick={() => isInView && handleOptionClick(option)}
-                onMouseEnter={() => isInView && setHoverOption(option.id)}
-                onMouseLeave={() => isInView && setHoverOption(null)}
-                title={option.description}
-              >
-                <div className="flex flex-col w-full h-full">
-                  <div className={`flex items-center justify-center h-16 rounded-full
-                    ${isSelected ? 'bg-white bg-opacity-20' : 'bg-blue-50'}`
-                  }>
-                    <span className={`font-medium text-2xl ${isSelected ? 'text-white' : 'text-blue-600'}`}>
-                      {option.label}
-                    </span>
-                  </div>
-                  <div className="flex-1"></div>
-                </div>
-              </div>
-            );
-          })}
+      {/* Title at the bottom */}
+      <div className="mt-auto pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-center space-x-2">
+          <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+          </svg>
+          <span className="text-sm font-semibold text-gray-700">Modification Threads</span>
         </div>
       </div>
     </div>
@@ -781,7 +645,7 @@ const UnifiedInterface = () => {
   }, [isDragging]);
   
   // Determine visibility of components based on view mode
-  const isSideWheelVisible = sidebarWidth < 40; // Visible in detail and composition views
+  const isModificationThreadsVisible = sidebarWidth < 40; // Visible in detail and composition views
   const isLoopyVisible = sidebarWidth < 40; // Show Loopy in detail and composition views
   
   // Dynamically determine grid columns based on width
@@ -1181,23 +1045,23 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       
       {/* Main content with sidebar layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar with wheel (visible in detail and composition views) */}
-        {isSideWheelVisible && (
+        {/* Left sidebar with modification threads (visible in detail and composition views) */}
+        {isModificationThreadsVisible && (
           <aside className="w-56 transition-all duration-300 ease-in-out">
-            <SideWheel />
+            <ModificationThreads />
           </aside>
         )}
         
         {/* Main visualization area with Loopy or placeholder */}
         <main 
           className="transition-all duration-300 ease-in-out overflow-auto p-6 flex-1"
-          style={{ width: isSideWheelVisible ? `calc(100% - ${sidebarWidth}% - 56px)` : `calc(100% - ${sidebarWidth}%)` }}
+          style={{ width: isModificationThreadsVisible ? `calc(100% - ${sidebarWidth}% - 56px)` : `calc(100% - ${sidebarWidth}%)` }}
         >
           <div className="bg-white rounded-lg shadow-md p-6 h-full relative">
             {isLoopyVisible ? (
               <>
-                {/* Visual indicator connecting the side wheel to Loopy interface */}
-                {isSideWheelVisible && (
+                {/* Visual indicator connecting the modification threads to Loopy interface */}
+                {isModificationThreadsVisible && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-6 w-6 h-32 flex items-center justify-start">
                     <svg width="24" height="120" viewBox="0 0 24 120" fill="none">
                       <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" fill="#f9fafb" />
