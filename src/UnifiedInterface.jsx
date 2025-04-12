@@ -427,9 +427,9 @@ const ModificationThreads = () => {
 
   // Simplified options - just keeping 3 main ones
   const options = [
-    { id: 'M1', label: 'M1', description: 'Visualization' },
-    { id: 'M2', label: 'M2', description: 'Properties' },
-    { id: 'M3', label: 'M3', description: 'Elements' }
+    { id: 'M1', label: 'M1', description: 'Balance' },
+    { id: 'M2', label: 'M2', description: 'Reinforce' },
+    { id: 'M3', label: 'M3', description: 'Enhance' }
   ];
   
   const handleOptionClick = (option) => {
@@ -438,14 +438,14 @@ const ModificationThreads = () => {
   };
   
   return (
-    <div className="h-full flex flex-col p-4 gap-4 overflow-auto">
+    <div className="h-full flex flex-col p-4 gap-2 overflow-auto">
       {options.map((option) => {
         const isSelected = option.id === selectedOption;
         
         return (
           <div 
             key={option.id}
-            className={`flex flex-col p-6 rounded-lg shadow-sm cursor-pointer transition-all duration-200
+            className={`flex flex-col p-4 rounded-lg shadow-sm cursor-pointer transition-all duration-200
               ${isSelected 
                 ? 'bg-blue-600 text-white' 
                 : 'bg-white text-blue-700 border border-gray-100 hover:bg-blue-50'
@@ -1047,7 +1047,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar with modification threads (visible in detail and composition views) */}
         {isModificationThreadsVisible && (
-          <aside className="w-56 transition-all duration-300 ease-in-out">
+          <aside className="w-72 transition-all duration-300 ease-in-out">
             <ModificationThreads />
           </aside>
         )}
@@ -1060,15 +1060,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
           <div className="bg-white rounded-lg shadow-md p-6 h-full relative">
             {isLoopyVisible ? (
               <>
-                {/* Visual indicator connecting the modification threads to Loopy interface */}
-                {isModificationThreadsVisible && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-6 w-6 h-32 flex items-center justify-start">
-                    <svg width="24" height="120" viewBox="0 0 24 120" fill="none">
-                      <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" fill="#f9fafb" />
-                      <path d="M0,60 C14,60 20,30 24,0 L24,120 C20,90 14,60 0,60 Z" stroke="#e5e7eb" strokeWidth="1" fill="none" />
-                    </svg>
-                  </div>
-                )}
                 <LoopyVisualizer 
                   model={selectedModel ? jsonModels[selectedModel] : null} 
                   title="Loopy Interactive Model" 
