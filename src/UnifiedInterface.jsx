@@ -145,21 +145,24 @@ const MergeModal = ({ isOpen, onClose, model, title, onSubmit, isLoading, onCanc
 
 // Memoized MermaidPreview component to avoid unnecessary re-renders
 const MermaidPreview = memo(({ model, isSelected }) => {
-  // Memoize the mermaid code generation
+  // Build mermaid code from model
   const mermaidCode = useMemo(() => {
+    // Parse the model and generate simplified mermaid
     const parsedModel = parseModelData(model);
-    return modelToMermaid(parsedModel, { direction: 'TB', nodeStyle: 'box' });
+    return modelToMermaid(parsedModel);
   }, [model]);
   
   return (
-    <div className="p-2 bg-gray-50 rounded-b-md">
-      <div className="mermaid-preview" style={{ maxHeight: '150px', overflow: 'hidden' }}>
+    <div className="h-32 flex items-center justify-center p-1">
+      <div 
+        className={`w-full h-full flex items-center justify-center transition-opacity duration-200 ${!isSelected ? 'opacity-70' : 'opacity-100'}`}
+      >
         <MermaidDiagram 
           chart={mermaidCode} 
           config={{ 
             theme: 'neutral',
             fontFamily: 'system-ui, sans-serif',
-            flowchart: { curve: 'basis', htmlLabels: true }
+            flowchart: { curve: 'basis', htmlLabels: true },
           }} 
           compact={true}
         />
@@ -170,256 +173,6 @@ const MermaidPreview = memo(({ model, isSelected }) => {
     </div>
   );
 });
-
-// Model Library Overlay component that displays model cards in a grid layout
-const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
-  const [selectedModels, setSelectedModels] = useState([]);
-  const [showingComparison, setShowingComparison] = useState(false);
-  
-  if (!isOpen) return null;
-  
-  // Format model name by removing .json extension and adding spaces
-  const formatModelName = (filename) => {
-    return filename
-      .replace('.json', '')
-      .split(/(?=[A-Z])|[-_]/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-  
-  const toggleModelSelection = (filename) => {
-    if (selectedModels.includes(filename)) {
-      // Remove model from selection
-      setSelectedModels(selectedModels.filter(name => name !== filename));
-    } else if (selectedModels.length < 3) {
-      // Add model to selection only if less than 3 models are currently selected
-      setSelectedModels([...selectedModels, filename]);
-    }
-    // If already 3 models selected, do nothing
-  };
-  
-  // Generate simplified mermaid code for each model
-  const generateSimplifiedMermaid = (model) => {
-    const parsedModel = parseModelData(model);
-    // Use standard mermaid conversion with minimal styling options
-    return modelToMermaid(parsedModel);
-  };
-  
-  // Handle compare button click
-  const handleCompareClick = () => {
-    if (selectedModels.length > 0) {
-      setShowingComparison(true);
-    }
-  };
-  
-  // Reset comparison view
-  const resetComparison = () => {
-    setShowingComparison(false);
-  };
-  
-  // Note: This will now use the central grid layout functions from UnifiedInterface
-  // Get CSS grid template columns for proper sizing
-  const getGridStyle = () => {
-    // For the overlay, always use 3 columns for consistent layout
-    return {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      gap: '1rem',
-    };
-  };
-  
-  // Get the appropriate grid class based on column count
-  const getGridClass = () => {
-    return 'auto-rows-max';
-  };
-  
-  return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex flex-col overflow-auto">
-      {/* Main content container with styling matching visualizer */}
-      <div className="flex flex-col m-4 bg-white rounded-lg shadow-md h-full">
-        {/* Header with close button */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <div className="w-1/3">
-            {/* Left side - Visualizer button */}
-            <div 
-              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              onClick={onClose}
-            >
-              <span>📊 Visualizer</span>
-            </div>
-          </div>
-          
-          {/* Center - Title */}
-          <h2 className="text-2xl font-bold text-gray-800 text-center w-1/3">Model Directory</h2>
-          
-          {/* Right side - Close button */}
-          <div className="w-1/3 flex justify-end">
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none"
-            >
-              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        
-        {/* Main layout with three columns */}
-        <div className="flex flex-1 overflow-hidden p-4">
-          {/* Left column */}
-          <div className="w-1/4 flex flex-col space-y-4 mr-4">
-            {/* Future prompting area */}
-            <div className="border border-gray-200 rounded-lg p-4 flex-1 bg-gray-50">
-              <p className="text-gray-600 italic">
-                &lt;Future prompting area for searching, including by structure, subgraph size and shape, reinforcing and balancing loops, application domain etc&gt;
-              </p>
-            </div>
-            
-            {/* Placeholder info area */}
-            <div className="border border-gray-200 rounded-lg p-4 flex-1 bg-gray-50">
-              <p className="text-gray-600 italic">
-                &lt;Placeholder space for more information about the model's inspiration, central mechanism/functional difference from other options.&gt;
-              </p>
-            </div>
-          </div>
-          
-          {/* Center and right column for model display */}
-          <div className="w-3/4 flex flex-col overflow-hidden">
-            {/* Fixed controls section */}
-            <div className="sticky top-0 bg-white z-10 pb-4">
-              {/* Compare Selection button */}
-              <div className="flex justify-center mb-6">
-                <div 
-                  className={`px-6 py-2 bg-orange-500 text-white rounded-md ${selectedModels.length > 0 ? 'cursor-pointer hover:bg-orange-600' : 'opacity-70 cursor-not-allowed'}`}
-                  onClick={handleCompareClick}
-                >
-                  Compare Selection ({selectedModels.length}/3)
-                </div>
-              </div>
-              
-              {/* Experimental area */}
-              <div className="mb-6">
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  {showingComparison ? (
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <h3 className="text-gray-800 font-bold">COMPARING MODELS</h3>
-                        <button 
-                          onClick={resetComparison}
-                          className="text-gray-600 hover:text-gray-800 focus:outline-none"
-                        >
-                          Reset
-                        </button>
-                      </div>
-                      <div className="flex justify-center space-x-4">
-                        {selectedModels.map((filename) => (
-                          <div key={filename} className="w-1/3 border border-gray-300 rounded-lg p-2 bg-white">
-                            <div className="h-32 flex items-center justify-center">
-                              <MermaidDiagram 
-                                chart={generateSimplifiedMermaid(models[filename])} 
-                                config={{ 
-                                  theme: 'neutral',
-                                  fontFamily: 'system-ui, sans-serif',
-                                  flowchart: { curve: 'basis', htmlLabels: true },
-                                }} 
-                                compact={true}
-                              />
-                            </div>
-                            <div className="text-gray-700 text-sm font-medium text-center mt-2">
-                              {formatModelName(filename)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="italic text-center text-gray-600">&lt;EXPERIMENTAL AREA FOR POSSIBLE COMPOSITIONS&gt;</p>
-                  )}
-                </div>
-                
-                <div className="mt-4 flex justify-center">
-                  <div className={`inline-block px-6 py-2 bg-green-600 text-white rounded-md ${showingComparison ? 'cursor-pointer hover:bg-green-700' : 'opacity-70'}`}>
-                    Confirm Compose
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Scrollable model grid */}
-            <div className="overflow-y-auto h-full">
-              {/* Model Grid - all models in 3 columns */}
-              <div className={`${getGridClass()}`} style={getGridStyle()}>
-                {Object.keys(models).map((filename, index) => {
-                  const model = models[filename];
-                  const displayName = formatModelName(filename);
-                  const isSelected = selectedModels.includes(filename);
-                  const mermaidCode = generateSimplifiedMermaid(model);
-                  
-                  return (
-                    <div 
-                      key={filename}
-                      className={`border ${isSelected ? 'border-orange-500 ring-2 ring-orange-500' : 'border-gray-200'} rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md`}
-                      onClick={() => onSelectModel(model, displayName)}
-                    >
-                      <div className="p-4 flex flex-col items-center">
-                        {/* Model Graph Visualization */}
-                        <div className="mb-4 h-32 w-full flex items-center justify-center">
-                          <MermaidDiagram 
-                            chart={mermaidCode} 
-                            config={{ 
-                              theme: 'neutral',
-                              fontFamily: 'system-ui, sans-serif',
-                              flowchart: { curve: 'basis', htmlLabels: true },
-                            }} 
-                            compact={true}
-                          />
-                        </div>
-                        
-                        <div className="text-gray-800 text-sm font-medium mb-2 text-center">
-                          {displayName}
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex space-x-4">
-                          <button 
-                            className={`w-10 h-10 ${isSelected ? 'bg-orange-600' : 'bg-blue-700'} border border-blue-500 rounded-md text-white flex items-center justify-center hover:bg-blue-600 focus:outline-none ${selectedModels.length >= 3 && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleModelSelection(filename);
-                            }}
-                          >
-                            {isSelected ? (
-                              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            ) : (
-                              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                            )}
-                          </button>
-                          <button 
-                            className="w-10 h-10 bg-transparent border border-blue-500 rounded-md text-blue-400 flex items-center justify-center hover:bg-blue-900 focus:outline-none"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Modification threads component with list of options
 const ModificationThreads = () => {
@@ -538,9 +291,6 @@ const UnifiedInterface = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalModel, setModalModel] = useState(null);
   const [modalTitle, setModalTitle] = useState('');
-  
-  // Add state for model library overlay
-  const [libraryOpen, setLibraryOpen] = useState(false);
   
   // Add state for merge modal
   const [mergeModelTitle, setMergeModelTitle] = useState('');
@@ -841,32 +591,12 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
   
   // Sidebar component for model selection with Mermaid visualizations
   const ModelSidebar = () => {
-    // Add searchTerm state here
     const [searchTerm, setSearchTerm] = useState('');
-    // Add ref to maintain focus
-    const searchInputRef = useRef(null);
     
-    // Memoize filtered models calculation
-    const filteredModels = useMemo(() => {
-      return getModelNames().filter(filename => {
-        const displayName = formatModelName(filename).toLowerCase();
-        const description = getModelDescription(filename).toLowerCase();
-        const search = searchTerm.toLowerCase();
-        
-        return displayName.includes(search) || description.includes(search);
-      });
-    }, [searchTerm]); // Only recalculate when searchTerm changes
-    
-    // Add effect to maintain focus after render
-    useEffect(() => {
-      // If we have a ref to the search input and it should have focus
-      if (searchInputRef.current && document.activeElement === searchInputRef.current) {
-        // Keep the focus and cursor position
-        const cursorPosition = searchInputRef.current.selectionStart;
-        searchInputRef.current.focus();
-        searchInputRef.current.setSelectionRange(cursorPosition, cursorPosition);
-      }
-    });
+    // Filter models based on search term
+    const filteredModels = getModelNames().filter(name => 
+      formatModelName(name).toLowerCase().includes(searchTerm.toLowerCase())
+    );
     
     // Determine if sidebar content should be shown based on view mode
     const showSidebarContent = getGridColumns() > 0;
@@ -875,12 +605,9 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col overflow-hidden">
         {/* Header with title and expand/collapse indicator */}
         <div className="flex justify-between items-center mb-4">
-        <button 
-          onClick={() => setLibraryOpen(true)}
-          className="text-lg font-semibold text-gray-700 hover:text-blue-600 focus:outline-none text-left"
-        >
+        <h2 className="text-lg font-semibold text-gray-700">
           Available Models
-        </button>
+        </h2>
           
           <button
             onClick={() => {
@@ -1140,21 +867,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         onClose={() => setShowResponseModal(false)}
         response={claudeResponse}
         isLoading={loadingResponse}
-      />
-      
-      {/* Model library overlay component */}
-      <ModelLibraryOverlay
-        isOpen={libraryOpen}
-        onClose={() => setLibraryOpen(false)}
-        models={getModelNames().map(name => ({
-          id: name,
-          name: formatModelName(name),
-          model: jsonModels[name]
-        }))}
-        onSelectModel={(id) => {
-          setSelectedModel(id);
-          setLibraryOpen(false);
-        }}
       />
     </div>
   );
