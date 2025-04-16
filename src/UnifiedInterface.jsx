@@ -10,6 +10,18 @@ const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
   // Add state for tooltip visibility
   const [showTooltip, setShowTooltip] = useState(false);
   
+  // State for the "Create New Model" button interaction
+  const [buttonState, setButtonState] = useState('idle'); // 'idle', 'holding', 'loading', 'input'
+  const [pressStartTime, setPressStartTime] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [inputValue, setInputValue] = useState('');
+  const holdTimeoutRef = useRef(null);
+  const loadingIntervalRef = useRef(null);
+  
+  // State for the "Models... of what?" button and its children
+  const [showChildButtons, setShowChildButtons] = useState(false);
+  const [selectedChildButtons, setSelectedChildButtons] = useState({});
+  
   // Function to handle icon click
   const handleIconClick = (e) => {
     e.preventDefault();
@@ -20,6 +32,89 @@ const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
       setShowTooltip(false);
     }, 1500);
   };
+  
+  const resetLoadingState = () => {
+    clearTimeout(holdTimeoutRef.current);
+    clearInterval(loadingIntervalRef.current);
+    holdTimeoutRef.current = null;
+    loadingIntervalRef.current = null;
+    setButtonState('idle');
+    setLoadingProgress(0);
+    setPressStartTime(null);
+  };
+  
+  const handleMouseDown = () => {
+    setButtonState('holding');
+    setPressStartTime(Date.now());
+
+    // Start timeout to transition to loading/input after 1 second
+    holdTimeoutRef.current = setTimeout(() => {
+      setButtonState('loading');
+      
+      // Start loading bar animation (0 to 100% over 1 second)
+      const loadingDuration = 1000; // 1 second
+      const startTime = Date.now();
+      
+      loadingIntervalRef.current = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
+        const progress = Math.min(elapsedTime / loadingDuration, 1);
+        setLoadingProgress(progress);
+
+        if (progress >= 1) {
+          clearInterval(loadingIntervalRef.current);
+          setButtonState('input');
+        }
+      }, 16); // ~60fps update
+
+    }, 500); // Start loading after 0.5 seconds of holding
+  };
+  
+  const handleMouseUp = () => {
+    if (buttonState === 'holding') {
+      const pressDuration = Date.now() - pressStartTime;
+      if (pressDuration < 500) {
+        // Short click: execute original action
+        onCreateNew();
+      }
+    }
+    // If state is 'loading' or 'input', releasing the mouse doesn't revert it
+    // Only reset if it was just 'holding' or if leaving the button area
+    if (buttonState === 'holding') {
+       resetLoadingState();
+    }
+  };
+  
+  const handleMouseLeave = () => {
+    // If mouse leaves while holding (before transition), reset
+    if (buttonState === 'holding') {
+      resetLoadingState();
+    }
+  };
+  
+  // Function to toggle child buttons
+  const handleToggleChildButtons = () => {
+    setShowChildButtons(!showChildButtons);
+    // If showing child buttons, also transition to input mode
+    if (!showChildButtons) {
+      setButtonState('input');
+    }
+  };
+
+  // Function to handle child button click
+  const handleChildButtonClick = (id) => {
+    setSelectedChildButtons(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+  
+  // Cleanup timeouts/intervals on unmount
+  useEffect(() => {
+    return () => {
+      clearTimeout(holdTimeoutRef.current);
+      clearInterval(loadingIntervalRef.current);
+    };
+  }, []);
   
   return (
     <div className="h-screen bg-gradient-to-b from-white to-blue-50 flex flex-col overflow-hidden">
@@ -75,18 +170,96 @@ const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
               Visualize complex systems and intuitively understand their behavior!
             </p>
             
+            {/* "Models... of what?" button and child toggles */}
+            <div className="mb-8">
+              <button 
+                onClick={handleToggleChildButtons}
+                className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Models... of what?
+              </button>
+              
+              {showChildButtons && (
+                <>
+                  <p className="mt-8 text-sm text-gray-600 text-center">
+                    Anything you like! Some potential domains include:
+                  </p>
+                  <div className="mt-4 flex justify-center space-x-2">
+                    {[
+                      { id: 'environment', label: 'Environment' },
+                      { id: 'technology', label: 'Technology' },
+                      { id: 'culture', label: 'Culture' },
+                      { id: 'geopolitics', label: 'Geopolitics' },
+                      { id: 'relationships', label: 'Relationships' }
+                    ].map(({ id, label }) => (
+                      <button
+                        key={id}
+                        onClick={() => handleChildButtonClick(id)}
+                        className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                          selectedChildButtons[id]
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            
             {/* Action buttons - made more central and prominent */}
             <div className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-blue-100 mb-12">
               <div className="flex flex-col space-y-4">
-                <button 
-                  onClick={onCreateNew}
-                  className="px-8 py-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xl font-bold rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center transform hover:scale-105"
+                <div 
+                  className={`relative px-8 py-5 ${buttonState !== 'input' ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-white border border-gray-300'} text-white text-xl font-bold rounded-lg shadow-lg ${buttonState !== 'input' ? 'hover:from-green-600 hover:to-green-700' : ''} transition-all duration-300 flex items-center justify-center ${buttonState !== 'input' ? 'transform hover:scale-105 cursor-pointer' : ''}`}
+                  onMouseDown={buttonState !== 'input' ? handleMouseDown : undefined}
+                  onMouseUp={buttonState !== 'input' ? handleMouseUp : undefined}
+                  onMouseLeave={buttonState !== 'input' ? handleMouseLeave : undefined}
+                  style={{ minHeight: '76px' }} // Ensure consistent height
                 >
-                  <svg className="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Create New Model
-                </button>
+                  {buttonState === 'input' ? (
+                    <div className="relative w-full h-full flex items-center">
+                      <textarea
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="Describe the model you want to create..."
+                        className="w-full h-24 pl-3 pr-10 py-2 text-base font-normal text-gray-700 bg-transparent border-none rounded-lg resize-none focus:outline-none focus:ring-0"
+                        maxLength={500} // Example max length
+                      />
+                      <button
+                        onClick={onSkip} // Reuse the onSkip handler
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-green-600 hover:text-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded-full hover:bg-green-100 transition-all"
+                        aria-label="Confirm input"
+                      >
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Loading Bar Overlay */}
+                      {buttonState === 'loading' && (
+                        <div className="absolute inset-0 rounded-lg overflow-hidden">
+                           <div 
+                             className="h-full bg-gradient-to-r from-green-400 to-green-600 opacity-75 transition-all duration-100 ease-linear"
+                             style={{ width: `${loadingProgress * 100}%` }}
+                           ></div>
+                        </div>
+                      )}
+                      {/* Button Content */}
+                      <div className="relative z-10 flex items-center justify-center w-full">
+                        <svg className="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Create New Model
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <div className="text-center text-gray-500 font-medium my-1">or</div>
                 <button 
                   onClick={onBrowseModels}
@@ -1154,12 +1327,13 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
     // Logic for creating a new model would go here
     // For now, just navigate to the main interface
     setShowLanding(false);
+    handleViewModeChange('detail');
   };
 
   const handleBrowseModels = () => {
-    // Navigate to the main interface and open the library
+    // Navigate to the main interface and set to overview view
     setShowLanding(false);
-    setLibraryOpen(true);
+    handleViewModeChange('overview');
   };
 
   // If showing landing page, render it instead of the main interface
