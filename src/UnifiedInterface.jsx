@@ -324,84 +324,47 @@ const UnifiedInterface = () => {
       setSelectedModel(modelNames[0]);
     }
   }, []);
-  // Add a new state for the view mode 
-  const [viewMode, setViewMode] = useState('detail'); // Options: 'detail', 'composition', 'overview'
   
-  // Add state for sidebar width (1-4 models wide)
-  const [sidebarWidth, setSidebarWidth] = useState(0); // Width percentage (0% = detail, 20% = composition, 65% = overview)
-  const [isDragging, setIsDragging] = useState(false);
+  // Add a new state for the view mode 
+  const [viewMode, setViewMode] = useState('focus'); // Options: 'focus', 'integrate', 'explore'
+  
+  // Layout configuration constants for each view mode
+  const VIEW_MODE_LAYOUTS = {
+    focus: {
+      sidebarWidth: 0, // No models visible
+      showModificationThreads: true,
+      showLoopy: true
+    },
+    integrate: {
+      sidebarWidth: 20, // One model column
+      showModificationThreads: true,
+      showLoopy: true
+    },
+    explore: {
+      sidebarWidth: 65, // Full library view
+      showModificationThreads: false,
+      showLoopy: false
+    }
+  };
   
   // Handle view mode changes
   const handleViewModeChange = (mode) => {
     console.log(`View mode changed to: ${mode}`);
     setViewMode(mode);
-    
-    // Set fixed sidebar width based on view mode
-    if (mode === 'detail') {
-      setSidebarWidth(0); // No models visible
-    } else if (mode === 'composition') {
-      setSidebarWidth(20); // One model column
-    } else if (mode === 'overview') {
-      setSidebarWidth(65); // Full library view
-    }
   };
   
-  // Handle mouse down on the resize handle
-  const handleMouseDown = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+  // Get current layout configuration
+  const layoutConfig = VIEW_MODE_LAYOUTS[viewMode];
   
-  // Handle mouse move while dragging
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    
-    const containerWidth = document.body.clientWidth;
-    const mouseX = e.clientX;
-    const newWidth = Math.round(100 - (mouseX / containerWidth * 100));
-    
-    // Snap to one of the three positions based on drag position
-    if (newWidth < 10) {
-      setSidebarWidth(0);
-      setViewMode('detail');
-    } else if (newWidth < 40) {
-      setSidebarWidth(20);
-      setViewMode('composition');
-    } else {
-      setSidebarWidth(65);
-      setViewMode('overview');
-    }
-  };
-  
-  // Handle mouse up to end dragging
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-  
-  // Add event listeners for dragging
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    }
-    
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-  
-  // Determine visibility of components based on view mode
-  const isModificationThreadsVisible = sidebarWidth < 40; // Visible in detail and composition views
-  const isLoopyVisible = sidebarWidth < 40; // Show Loopy in detail and composition views
+  // Determine visibility of components based on layout config
+  const isModificationThreadsVisible = layoutConfig.showModificationThreads;
+  const isLoopyVisible = layoutConfig.showLoopy;
   
   // Dynamically determine grid columns based on width
   const getGridColumns = () => {
-    if (sidebarWidth < 10) return 0; // No models visible in detail view
-    if (sidebarWidth < 25) return 1; // One model column in composition view
+    const { sidebarWidth } = layoutConfig;
+    if (sidebarWidth < 10) return 0; // No models visible in focus view
+    if (sidebarWidth < 25) return 1; // One model column in integrate view
     if (sidebarWidth < 40) return 2;
     if (sidebarWidth < 60) return 3;
     return 4;
@@ -609,20 +572,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
           Available Models
         </h2>
           
-          <button
-            onClick={() => {
-              const nextMode = viewMode === 'detail' ? 'composition' 
-                : viewMode === 'composition' ? 'overview' 
-                : 'detail';
-              handleViewModeChange(nextMode);
-            }}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-            title="Toggle view"
-          >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={viewMode === 'overview' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
-            </svg>
-          </button>
+          
         </div>
         
         {/* Search Bar - only show if models are visible */}
@@ -648,12 +598,12 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         <div className="flex-1 overflow-y-auto pr-2">
           {!showSidebarContent ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Models are hidden in detail view</p>
+              <p className="text-gray-500">Models are hidden in focus view</p>
               <button 
-                onClick={() => handleViewModeChange('composition')}
+                onClick={() => handleViewModeChange('integrate')}
                 className="mt-4 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Switch to Composition View
+                Switch to Integrate View
               </button>
             </div>
           ) : filteredModels.length > 0 ? (
@@ -716,12 +666,12 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">CatCoLab Loopy Visualizer</h1>
         
-        {/* View mode selector - moved from footer to header */}
+        {/* View mode selector */}
         <div className="w-1/4 flex flex-col items-center">
           <div className="flex justify-between w-full mb-1">
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'detail' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Detail View</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'composition' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Composition</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'overview' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Overview</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'focus' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Focus</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'integrate' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Integrate</span>
+            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'explore' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Explore</span>
           </div>
           <div className="relative w-full h-8">
             {/* Background track */}
@@ -736,7 +686,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
             <div 
               className="absolute left-0 top-1/2 h-3 -mt-1.5 bg-white rounded-full shadow border border-gray-200 transition-all duration-300"
               style={{
-                left: viewMode === 'detail' ? '0%' : viewMode === 'composition' ? '50%' : '100%',
+                left: viewMode === 'focus' ? '0%' : viewMode === 'integrate' ? '50%' : '100%',
                 transform: 'translateX(-50%)',
                 width: '12px'
               }}
@@ -746,24 +696,24 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
             <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
               <button 
                 className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'detail' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('detail')}
+                  ${viewMode === 'focus' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('focus')}
               >
-                {viewMode === 'detail' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                {viewMode === 'focus' && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </button>
               <button 
                 className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'composition' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('composition')}
+                  ${viewMode === 'integrate' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('integrate')}
               >
-                {viewMode === 'composition' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                {viewMode === 'integrate' && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </button>
               <button 
                 className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'overview' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('overview')}
+                  ${viewMode === 'explore' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
+                onClick={() => handleViewModeChange('explore')}
               >
-                {viewMode === 'overview' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                {viewMode === 'explore' && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </button>
             </div>
           </div>
@@ -772,7 +722,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       
       {/* Main content with sidebar layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar with modification threads (visible in detail and composition views) */}
+        {/* Left sidebar with modification threads (visible in focus and integrate views) */}
         {isModificationThreadsVisible && (
           <aside className="w-72 transition-all duration-300 ease-in-out">
             <ModificationThreads />
@@ -782,7 +732,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         {/* Main visualization area with Loopy or placeholder */}
         <main 
           className="transition-all duration-300 ease-in-out overflow-auto p-6 flex-1"
-          style={{ width: isModificationThreadsVisible ? `calc(100% - ${sidebarWidth}% - 56px)` : `calc(100% - ${sidebarWidth}%)` }}
+          style={{ width: isModificationThreadsVisible ? `calc(100% - ${layoutConfig.sidebarWidth}% - 18rem)` : `calc(100% - ${layoutConfig.sidebarWidth}%)` }}
         >
           <div className="bg-white rounded-lg shadow-md p-6 h-full relative">
             {isLoopyVisible ? (
@@ -801,7 +751,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
                 </div>
                 <h3 className="text-lg font-medium text-gray-700 mb-2">Experimental Viewbox</h3>
                 <p className="text-gray-500 max-w-xs">
-                  The library overview mode provides a comprehensive view of available models.
+                  The library explore mode provides a comprehensive view of available models.
                 </p>
                 <div className="mt-6 border border-gray-200 rounded-lg p-4 w-full max-w-md">
                   <p className="italic text-center text-gray-600">
@@ -809,34 +759,20 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
                   </p>
                 </div>
                 <button 
-                  onClick={() => handleViewModeChange('detail')}
+                  onClick={() => handleViewModeChange('focus')}
                   className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  Return to Detail View
+                  Return to Focus View
                 </button>
               </div>
             )}
           </div>
         </main>
         
-        {/* Resize handle */}
-        <div 
-          className={`flex flex-col items-center justify-center py-6 cursor-col-resize hover:bg-blue-100 active:bg-blue-200 z-10 ${isDragging ? 'bg-blue-100' : 'bg-gray-50'}`}
-          onMouseDown={handleMouseDown}
-          style={{ width: '12px' }}
-        >
-          <div className="flex flex-col items-center space-y-1 opacity-50">
-            <div className="w-1 h-8 bg-gray-400 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-          </div>
-        </div>
-        
         {/* Right sidebar with model selection and Mermaid previews */}
         <aside 
           className="border-l border-gray-200 p-4 overflow-y-auto transition-all duration-500 ease-in-out"
-          style={{ width: `${sidebarWidth}%` }}
+          style={{ width: `${layoutConfig.sidebarWidth}%` }}
         >
           <ModelSidebar />
         </aside>
