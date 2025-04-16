@@ -177,54 +177,230 @@ const MermaidPreview = memo(({ model, isSelected }) => {
 // Modification threads component with list of options
 const ModificationThreads = () => {
   const [selectedOption, setSelectedOption] = useState(null);
+  const [customThread, setCustomThread] = useState('');
+  const [showDetailView, setShowDetailView] = useState(false);
 
-  // Simplified options - just keeping 3 main ones
+  // Options based on the image with updated "pull" language
   const options = [
-    { id: 'M1', label: 'M1', description: 'Balance' },
-    { id: 'M2', label: 'M2', description: 'Reinforce' },
-    { id: 'M3', label: 'M3', description: 'Enhance' }
+    { id: 'add_variable', label: 'Add another variable', description: 'Pull this thread to introduce a new factor to the system' },
+    { id: 'increase_nuance', label: 'Increase nuance', description: 'Unravel this thread to add more detail to existing relationships' },
+    { id: 'simplify', label: 'Simplify', description: 'Follow this thread to reduce complexity while preserving key dynamics' },
   ];
   
-  const handleOptionClick = (option) => {
-    setSelectedOption(option.id === selectedOption ? null : option.id);
+  // Detailed suggestions for each option
+  const detailedSuggestions = {
+    add_variable: [
+      { 
+        id: 'vegetation', 
+        title: 'Vegetation',
+        description: 'Would have a positive effect on rabbits (more food = more rabbits) and could create a three-variable causal loop where: more vegetation → more rabbits → more foxes → fewer rabbits → more vegetation (as fewer rabbits consume less vegetation).'
+      },
+      { 
+        id: 'disease', 
+        title: 'Disease',
+        description: 'Could affect either fox or rabbit populations negatively, introducing a new dynamic where disease outbreaks might temporarily disrupt the predator-prey balance, causing population oscillations.'
+      },
+      { 
+        id: 'human_hunting', 
+        title: 'Human is Hunting',
+        description: 'Would have a negative effect on fox populations, potentially leading to rabbit population booms when fox numbers are reduced, which could then lead to vegetation depletion.'
+      }
+    ],
+    increase_nuance: [
+      { 
+        id: 'age_structure', 
+        title: 'Age Structure',
+        description: 'Adding age categories to rabbits and foxes would allow for more realistic reproduction and mortality rates.'
+      },
+      { 
+        id: 'seasonal_effects', 
+        title: 'Seasonal Effects',
+        description: 'Introduce temporal dynamics where predator-prey relationships change throughout the year.'
+      }
+    ],
+    simplify: [
+      { 
+        id: 'linear_relationship', 
+        title: 'Linear Relationship',
+        description: 'Simplify the feedback loops to focus only on the direct relationship between foxes and rabbits.'
+      },
+      { 
+        id: 'population_equilibrium', 
+        title: 'Population Equilibrium',
+        description: 'Focus on the equilibrium point rather than the dynamics leading to it.'
+      }
+    ],
+    explore_more: [
+      { 
+        id: 'habitat_fragmentation', 
+        title: 'Habitat Fragmentation',
+        description: 'Explore how dividing the ecosystem into separate regions affects population dynamics.'
+      },
+      { 
+        id: 'genetic_adaptation', 
+        title: 'Genetic Adaptation',
+        description: 'Model how foxes and rabbits might evolve strategies over time in response to each other.'
+      }
+    ]
   };
   
+  const handleOptionClick = (option) => {
+    if (selectedOption === option.id) {
+      // If already selected, toggle detail view
+      setShowDetailView(!showDetailView);
+    } else {
+      // If new option selected, show the details
+      setSelectedOption(option.id);
+      setShowDetailView(true);
+    }
+  };
+
+  const handleDetailedSuggestionClick = (suggestion) => {
+    // This would handle implementing the suggestion
+    console.log(`Implementing suggestion: ${suggestion.title}`);
+    // In a real implementation, this would add the variable to the model
+  };
+
+  const handleBackClick = () => {
+    setShowDetailView(false);
+  };
+
+  const handleCustomSubmit = (e) => {
+    e.preventDefault();
+    if (customThread.trim()) {
+      // Handle custom thread submission
+      console.log('Custom thread:', customThread);
+      setCustomThread('');
+    }
+  };
+  
+  // If showing detail view, render the suggestions for the selected option
+  if (showDetailView && selectedOption) {
+    const suggestions = detailedSuggestions[selectedOption] || [];
+    
+    return (
+      <div className="h-full flex flex-col p-4 overflow-auto">
+        <div className="mb-4 flex items-center">
+          <button 
+            onClick={handleBackClick}
+            className="mr-2 p-1 rounded-full hover:bg-gray-100"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h3 className="text-lg font-semibold text-gray-800">
+            Thread: {options.find(opt => opt.id === selectedOption)?.label.replace(' →', '')}
+          </h3>
+        </div>
+        
+        <div className="space-y-4 mb-4">
+          {suggestions.map(suggestion => (
+            <div 
+              key={suggestion.id}
+              className="p-4 border border-gray-300 rounded-lg hover:border-blue-400 cursor-pointer transition-all duration-200 hover:-translate-x-1"
+              onClick={() => handleDetailedSuggestionClick(suggestion)}
+            >
+              <h4 className="font-medium text-gray-900 mb-1">{suggestion.title}</h4>
+              <p className="text-sm text-gray-700">{suggestion.description}</p>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-auto pt-4 border-t border-gray-200">
+          <p className="text-sm font-medium text-gray-700 mb-2">Describe what you'd like in more detail</p>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (customThread.trim()) {
+                console.log('Custom detail:', customThread);
+                setCustomThread('');
+              }
+            }} 
+            className="flex items-center"
+          >
+            <input
+              type="text"
+              value={customThread}
+              onChange={(e) => setCustomThread(e.target.value)}
+              placeholder="Add more specifics about this thread..."
+              className="flex-1 px-3 py-2 border-b-2 border-gray-300 focus:border-blue-500 outline-none transition-colors"
+            />
+            <button
+              type="submit"
+              className="ml-2 text-blue-500 hover:text-blue-700"
+              disabled={!customThread.trim()}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+  
+  // Otherwise show the main thread options
   return (
-    <div className="h-full flex flex-col p-4 gap-2 overflow-auto">
+    <div className="h-full flex flex-col p-4 gap-4 overflow-auto">
+      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+        Pull thread to explore
+      </h3>
+      
       {options.map((option) => {
         const isSelected = option.id === selectedOption;
         
         return (
           <div 
             key={option.id}
-            className={`flex flex-col p-4 rounded-lg shadow-sm cursor-pointer transition-all duration-200
-              ${isSelected 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-blue-700 border border-gray-100 hover:bg-blue-50'
-              }`}
+            className={`flex flex-col p-3.5 rounded-lg border ${
+              isSelected 
+                ? 'border-blue-400 bg-blue-50' 
+                : 'border-gray-300 bg-white hover:border-gray-400'
+            } cursor-pointer transition-all duration-200 shadow-sm hover:-translate-x-1`}
             onClick={() => handleOptionClick(option)}
           >
-            <div className={`flex items-center justify-center h-12 w-12 rounded-full mb-4
-              ${isSelected ? 'bg-white bg-opacity-20' : 'bg-blue-50'}`
-            }>
-              <span className={`font-medium text-xl ${isSelected ? 'text-white' : 'text-blue-600'}`}>
-                {option.label}
-              </span>
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="font-medium text-gray-800">{option.label} {option.id !== 'explore_more' ? '→' : ''}</span>
             </div>
-            <span className="font-medium">{option.description}</span>
+            {isSelected && !showDetailView && (
+              <p className="mt-2 text-sm text-gray-600">{option.description}</p>
+            )}
           </div>
         );
       })}
       
-      {/* Title at the bottom */}
-      <div className="mt-auto pt-4 border-t border-gray-200">
-        <div className="flex items-center justify-center space-x-2">
-          <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+      {/* Custom thread input - now part of the list */}
+      <form 
+        onSubmit={handleCustomSubmit} 
+        className="flex flex-col p-3.5 rounded-lg border border-dashed border-gray-300 bg-white hover:border-blue-400 transition-all duration-200"
+      >
+        <div className="flex items-center">
+          <svg className="w-4 h-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4v16m-8-8h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="text-sm font-semibold text-gray-700">Modification Threads</span>
+          <input
+            type="text"
+            value={customThread}
+            onChange={(e) => setCustomThread(e.target.value)}
+            placeholder="What would you like to pull on..."
+            className="flex-1 bg-transparent border-none outline-none text-gray-800 font-medium placeholder-gray-400"
+          />
+          <button
+            type="submit"
+            className="ml-2 text-blue-500 hover:text-blue-700"
+            disabled={!customThread.trim()}
+          >
+            →
+          </button>
         </div>
-      </div>
+      </form>
+      
+      <div className="flex-1"></div> {/* Spacer to push content to top */}
     </div>
   );
 };
@@ -818,7 +994,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         
         {/* Right sidebar for model selection (in explore view) or modification threads (in integrate view) */}
         <aside 
-          className={`${viewMode === 'integrate' ? 'w-72' : ''} border-l border-gray-200 p-4 overflow-y-auto transition-all duration-500 ease-in-out`}
+          className={`${viewMode === 'integrate' ? 'w-96' : ''} border-l border-gray-200 p-4 overflow-y-auto transition-all duration-500 ease-in-out`}
           style={viewMode !== 'integrate' ? { width: `${layoutConfig.sidebarWidth}%` } : {}}
         >
           {viewMode === 'integrate' && isModificationThreadsVisible ? (
