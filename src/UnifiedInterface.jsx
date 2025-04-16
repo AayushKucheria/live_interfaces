@@ -4,6 +4,7 @@ import MermaidDiagram from './components/MermaidDiagram';
 import { modelToMermaid, parseModelData } from './utils/mermaidUtils';
 import { jsonModels, formatModelName, getModelNames, addModelToLibrary } from './utils/jsonModelLoader';
 import { sendMessageToClaude } from './services/openRouterService';
+import { generateThreadSuggestions } from './services/aiThreadService';
 
 // Modal component for displaying the larger Mermaid diagram
 const MermaidModal = ({ isOpen, onClose, model, title }) => {
@@ -202,20 +203,20 @@ const MermaidPreview = memo(({ model, isSelected }) => {
 });
 
 // Modification threads component with list of options
-const ModificationThreads = () => {
+const ModificationThreads = ({ model, forceRefresh }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [customThread, setCustomThread] = useState('');
   const [showDetailView, setShowDetailView] = useState(false);
-
-  // Options based on the image with updated "pull" language
-  const options = [
+  
+  // State for AI-generated threads
+  const [threadOptions, setThreadOptions] = useState([
     { id: 'add_variable', label: 'Add another variable', description: 'Pull this thread to introduce a new factor to the system' },
     { id: 'increase_nuance', label: 'Increase nuance', description: 'Unravel this thread to add more detail to existing relationships' },
     { id: 'simplify', label: 'Simplify', description: 'Follow this thread to reduce complexity while preserving key dynamics' },
-  ];
+  ]);
   
-  // Detailed suggestions for each option
-  const detailedSuggestions = {
+  // State for AI-generated detailed suggestions
+  const [threadSuggestions, setThreadSuggestions] = useState({
     add_variable: [
       { 
         id: 'vegetation', 
@@ -269,8 +270,55 @@ const ModificationThreads = () => {
         description: 'Model how foxes and rabbits might evolve strategies over time in response to each other.'
       }
     ]
+  });
+  
+  // State for loading status
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch thread suggestions only when explicitly requested (view change or refresh button)
+  useEffect(() => {
+    if (model && forceRefresh) {
+      updateThreadSuggestions();
+    }
+  }, [model, forceRefresh]);
+  
+  // Function to update thread suggestions from AI
+  const updateThreadSuggestions = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Get suggestions from Claude
+      const suggestions = await generateThreadSuggestions(model);
+      
+      if (suggestions && suggestions.threads) {
+        // Update thread options
+        setThreadOptions(suggestions.threads.map(thread => ({
+          id: thread.id,
+          label: thread.label,
+          description: thread.description
+        })));
+        
+        // Update detailed suggestions
+        const detailedSuggestions = {};
+        suggestions.threads.forEach(thread => {
+          detailedSuggestions[thread.id] = thread.suggestions;
+        });
+        
+        setThreadSuggestions(detailedSuggestions);
+      }
+    } catch (error) {
+      console.error('Error updating thread suggestions:', error);
+      // Keep the default suggestions on error
+    } finally {
+      setIsLoading(false);
+    }
   };
   
+  // Function to manually refresh thread suggestions
+  const handleRefreshThreads = () => {
+    updateThreadSuggestions();
+  };
+
   const handleOptionClick = (option) => {
     if (selectedOption === option.id) {
       // If already selected, toggle detail view
@@ -283,9 +331,125 @@ const ModificationThreads = () => {
   };
 
   const handleDetailedSuggestionClick = (suggestion) => {
-    // This would handle implementing the suggestion
+    // Log the selected suggestion
     console.log(`Implementing suggestion: ${suggestion.title}`);
-    // In a real implementation, this would add the variable to the model
+    
+    // If there's no model, we can't do anything
+    if (!model || !model.nodes) {
+      console.error('Cannot implement suggestion - no valid model available');
+      return;
+    }
+    
+    // Prepare a system prompt for Claude to implement the suggestion
+    const systemPrompt = `
+    You are an AI assistant specialized in causal modeling.
+    Your task is to implement a specific modification to a causal model.
+    
+    The current model will be provided in a simplified JSON format.
+    
+    Return ONLY the modified model as a valid JSON object with the following structure:
+    {
+      "nodes": [
+        { "id": "node_id", "name": "Node Name" },
+        // more nodes...
+      ],
+      "edges": [
+        { "from": "source_node_id", "to": "target_node_id", "type": "positive|negative" },
+        // more edges...
+      ],
+      "theory": "causal-loop",
+      "type": "model"
+    }
+    
+    Do not include any explanation or additional text, only return valid JSON.
+    Ensure all node IDs are unique and edges reference valid node IDs.
+    Make minimal changes to implement the requested modification.
+    `;
+    
+    // Prepare the model in a simplified format for Claude
+    const simplifiedModel = {
+      nodes: model.nodes.map(n => ({ id: n.id.toString(), name: n.name })),
+      edges: (model.edges || []).map(e => ({ 
+        from: e.from.toString(), 
+        to: e.to.toString(), 
+        type: e.strength < 0 ? 'negative' : 'positive' 
+      })),
+      theory: model.theory || 'causal-loop',
+      type: 'model'
+    };
+    
+    // Prepare user message with the model and the suggestion
+    const userMessage = `
+    Here is the current causal model:
+    ${JSON.stringify(simplifiedModel, null, 2)}
+    
+    Implement this modification: "${suggestion.title}"
+    Description: ${suggestion.description}
+    
+    Return the modified model.
+    `;
+    
+    // Show loading state
+    setIsLoading(true);
+    
+    // Send to Claude
+    sendMessageToClaude(userMessage, systemPrompt)
+      .then(response => {
+        try {
+          // Extract JSON from the response
+          const jsonMatch = response.match(/\{[\s\S]*\}/);
+          let modifiedModel;
+          
+          if (jsonMatch) {
+            modifiedModel = JSON.parse(jsonMatch[0]);
+          } else {
+            // If no JSON pattern found, try parsing directly
+            modifiedModel = JSON.parse(response);
+          }
+          
+          // Clear the detail view and selection after implementation
+          setShowDetailView(false);
+          setSelectedOption(null);
+          
+          // Convert to Loopy format for direct update
+          // This simplified version doesn't rely on global event
+          const loopyFormat = {
+            nodes: modifiedModel.nodes.map((node, index) => ({
+              id: parseInt(node.id) || index,
+              name: node.name || `Node ${index + 1}`,
+              x: Math.random() * 800 + 100, // Random position
+              y: Math.random() * 400 + 50,  // Random position
+              hue: index % 6  // Color based on index
+            })),
+            edges: modifiedModel.edges.map((edge, index) => ({
+              id: index,
+              from: parseInt(edge.from) || 0,
+              to: parseInt(edge.to) || 0,
+              strength: edge.type === 'negative' ? -1 : 1,
+              arc: 0
+            })),
+            labels: []
+          };
+          
+          // Find the Loopy visualizer reference in the parent UnifiedInterface
+          // and update the model directly
+          if (window.loopyVisualizerRef && window.loopyVisualizerRef.current) {
+            window.loopyVisualizerRef.current.updateModel(loopyFormat);
+            console.log('Updated Loopy model via global ref');
+          } else {
+            console.error('Could not find global loopyVisualizerRef');
+          }
+          
+        } catch (error) {
+          console.error('Error parsing modified model:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      })
+      .catch(error => {
+        console.error('Error implementing suggestion:', error);
+        setIsLoading(false);
+      });
   };
 
   const handleBackClick = () => {
@@ -303,7 +467,7 @@ const ModificationThreads = () => {
   
   // If showing detail view, render the suggestions for the selected option
   if (showDetailView && selectedOption) {
-    const suggestions = detailedSuggestions[selectedOption] || [];
+    const suggestions = threadSuggestions[selectedOption] || [];
     
     return (
       <div className="h-full flex flex-col p-4 overflow-auto">
@@ -317,7 +481,7 @@ const ModificationThreads = () => {
             </svg>
           </button>
           <h3 className="text-lg font-semibold text-gray-800">
-            Thread: {options.find(opt => opt.id === selectedOption)?.label.replace(' →', '')}
+            Thread: {threadOptions.find(opt => opt.id === selectedOption)?.label.replace(' →', '')}
           </h3>
         </div>
         
@@ -371,61 +535,81 @@ const ModificationThreads = () => {
   // Otherwise show the main thread options
   return (
     <div className="h-full flex flex-col p-4 gap-4 overflow-auto">
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-        Pull thread to explore
-      </h3>
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-semibold text-gray-800">
+          Pull thread to explore
+        </h3>
+        <button
+          onClick={handleRefreshThreads}
+          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+          title="Refresh threads"
+        >
+          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      </div>
       
-      {options.map((option) => {
-        const isSelected = option.id === selectedOption;
-        
-        return (
-          <div 
-            key={option.id}
-            className={`flex flex-col p-3.5 rounded-lg border ${
-              isSelected 
-                ? 'border-blue-400 bg-blue-50' 
-                : 'border-gray-300 bg-white hover:border-gray-400'
-            } cursor-pointer transition-all duration-200 shadow-sm hover:-translate-x-1`}
-            onClick={() => handleOptionClick(option)}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+          <span className="ml-2 text-gray-600">Analyzing model...</span>
+        </div>
+      ) : (
+        <>
+          {threadOptions.map((option) => {
+            const isSelected = option.id === selectedOption;
+            
+            return (
+              <div 
+                key={option.id}
+                className={`flex flex-col p-3.5 rounded-lg border ${
+                  isSelected 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : 'border-gray-300 bg-white hover:border-gray-400'
+                } cursor-pointer transition-all duration-200 shadow-sm hover:-translate-x-1`}
+                onClick={() => handleOptionClick(option)}
+              >
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className="font-medium text-gray-800">{option.label} {option.id !== 'explore_more' ? '→' : ''}</span>
+                </div>
+                {isSelected && !showDetailView && (
+                  <p className="mt-2 text-sm text-gray-600">{option.description}</p>
+                )}
+              </div>
+            );
+          })}
+          
+          {/* Custom thread input - now part of the list */}
+          <form 
+            onSubmit={handleCustomSubmit} 
+            className="flex flex-col p-3.5 rounded-lg border border-dashed border-gray-300 bg-white hover:border-blue-400 transition-all duration-200"
           >
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 4v16m-8-8h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="font-medium text-gray-800">{option.label} {option.id !== 'explore_more' ? '→' : ''}</span>
+              <input
+                type="text"
+                value={customThread}
+                onChange={(e) => setCustomThread(e.target.value)}
+                placeholder="What would you like to pull on..."
+                className="flex-1 bg-transparent border-none outline-none text-gray-800 font-medium placeholder-gray-400"
+              />
+              <button
+                type="submit"
+                className="ml-2 text-blue-500 hover:text-blue-700"
+                disabled={!customThread.trim()}
+              >
+                →
+              </button>
             </div>
-            {isSelected && !showDetailView && (
-              <p className="mt-2 text-sm text-gray-600">{option.description}</p>
-            )}
-          </div>
-        );
-      })}
-      
-      {/* Custom thread input - now part of the list */}
-      <form 
-        onSubmit={handleCustomSubmit} 
-        className="flex flex-col p-3.5 rounded-lg border border-dashed border-gray-300 bg-white hover:border-blue-400 transition-all duration-200"
-      >
-        <div className="flex items-center">
-          <svg className="w-4 h-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 4v16m-8-8h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <input
-            type="text"
-            value={customThread}
-            onChange={(e) => setCustomThread(e.target.value)}
-            placeholder="What would you like to pull on..."
-            className="flex-1 bg-transparent border-none outline-none text-gray-800 font-medium placeholder-gray-400"
-          />
-          <button
-            type="submit"
-            className="ml-2 text-blue-500 hover:text-blue-700"
-            disabled={!customThread.trim()}
-          >
-            →
-          </button>
-        </div>
-      </form>
+          </form>
+        </>
+      )}
       
       <div className="flex-1"></div> {/* Spacer to push content to top */}
     </div>
@@ -549,6 +733,26 @@ const UnifiedInterface = () => {
   // Add state for showing help modal
   const [showHelpModal, setShowHelpModal] = useState(false);
   
+  // Add state for the current loopy model
+  const [currentLoopyModel, setCurrentLoopyModel] = useState(null);
+  
+  // Add state for thread refresh trigger
+  const [threadRefreshTrigger, setThreadRefreshTrigger] = useState(false);
+  
+  // Reference to the LoopyVisualizer component
+  const loopyVisualizerRef = useRef(null);
+  
+  // Expose the ref globally for ModificationThreads component to use
+  // This simplifies the communication between components
+  useEffect(() => {
+    window.loopyVisualizerRef = loopyVisualizerRef;
+    
+    // Cleanup on unmount
+    return () => {
+      window.loopyVisualizerRef = null;
+    };
+  }, []);
+  
   // Add ref for abort controller
   const abortControllerRef = useRef(null);
   
@@ -592,9 +796,21 @@ const UnifiedInterface = () => {
     }
   };
   
+  // Handler for LoopyVisualizer model change events
+  const handleLoopyModelChange = (updatedModel) => {
+    console.log('Loopy model updated:', updatedModel);
+    setCurrentLoopyModel(updatedModel);
+  };
+  
   // Handle view mode changes
   const handleViewModeChange = (mode) => {
+    const previousMode = viewMode;
     setViewMode(mode);
+    
+    // If changing to integrate view, trigger thread refresh
+    if (mode === 'integrate' && previousMode !== 'integrate') {
+      setThreadRefreshTrigger(prev => !prev);
+    }
   };
   
   // Get current layout configuration
@@ -635,6 +851,16 @@ const UnifiedInterface = () => {
     setModelToMerge(model);
     setMergeModelTitle(title);
     setMergeModalOpen(true);
+  };
+  
+  // Handler to directly import a model into the workspace
+  const handleImportModel = (e, model, title) => {
+    e.stopPropagation(); // Prevent triggering the parent onClick
+    setSelectedModel(getModelNames().find(key => jsonModels[key] === model));
+    // Add a small delay to allow state to update and trigger re-render
+    setTimeout(() => {
+      console.log(`Imported model: ${title}`);
+    }, 100);
   };
   
   // Handler for canceling the merge operation
@@ -854,6 +1080,12 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
                       <p className="text-sm text-gray-600 mt-1">{description}</p>
                       <div className="flex space-x-2 mt-2">
                         <button
+                          onClick={(e) => handleImportModel(e, model, displayName)}
+                          className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        >
+                          Import
+                        </button>
+                        <button
                           onClick={(e) => handleMergeModel(e, model, displayName)}
                           className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                         >
@@ -970,7 +1202,10 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         {/* Left sidebar with modification threads (visible only in integrate view and should be on left for other views) */}
         {isModificationThreadsVisible && viewMode !== 'integrate' && (
           <aside className="w-72 transition-all duration-300 ease-in-out">
-            <ModificationThreads />
+            <ModificationThreads 
+              model={currentLoopyModel} 
+              forceRefresh={false}
+            />
           </aside>
         )}
         
@@ -983,8 +1218,10 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
             {isLoopyVisible ? (
               <>
                 <LoopyVisualizer 
-                  model={selectedModel ? jsonModels[selectedModel] : null} 
+                  ref={loopyVisualizerRef}
+                  model={jsonModels[selectedModel]} 
                   title="Workspace" 
+                  onModelChange={handleLoopyModelChange}
                 />
               </>
             ) : null}
@@ -997,7 +1234,10 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
           style={viewMode !== 'integrate' ? { width: `${layoutConfig.sidebarWidth}%` } : {}}
         >
           {viewMode === 'integrate' && isModificationThreadsVisible ? (
-            <ModificationThreads />
+            <ModificationThreads 
+              model={currentLoopyModel}
+              forceRefresh={threadRefreshTrigger}
+            />
           ) : (
             <ModelSidebar />
           )}
