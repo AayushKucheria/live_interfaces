@@ -21,14 +21,37 @@ const MermaidModal = ({ isOpen, onClose, model, title }) => {
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+                // Call merge model with current title
+                handleMergeModel(e, model, title);
+              }}
+              className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            >
+              Steal
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                // Call translate function when implemented
+                console.log("Translate clicked for", title);
+              }}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Translate
+            </button>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div className="p-6 flex-1 overflow-auto">
           <MermaidDiagram chart={mermaidCode} />
@@ -153,9 +176,9 @@ const MermaidPreview = memo(({ model, isSelected }) => {
   }, [model]);
   
   return (
-    <div className="h-32 flex items-center justify-center p-1">
+    <div className="h-48 flex flex-col items-center justify-center p-1 overflow-hidden">
       <div 
-        className={`w-full h-full flex items-center justify-center transition-opacity duration-200 ${!isSelected ? 'opacity-70' : 'opacity-100'}`}
+        className={`w-full h-full flex items-center justify-center transition-opacity duration-200 ${!isSelected ? 'opacity-70' : 'opacity-100'} overflow-hidden`}
       >
         <MermaidDiagram 
           chart={mermaidCode} 
@@ -163,6 +186,10 @@ const MermaidPreview = memo(({ model, isSelected }) => {
             theme: 'neutral',
             fontFamily: 'system-ui, sans-serif',
             flowchart: { curve: 'basis', htmlLabels: true },
+            // Add more restrictive sizing to keep diagrams contained
+            width: '100%',
+            height: '100%',
+            fit: true
           }} 
           compact={true}
         />
@@ -561,7 +588,7 @@ const UnifiedInterface = () => {
     explore: {
       sidebarWidth: 65, // Full library view
       showModificationThreads: false,
-      showLoopy: false
+      showLoopy: true
     }
   };
   
@@ -577,30 +604,23 @@ const UnifiedInterface = () => {
   const isModificationThreadsVisible = layoutConfig.showModificationThreads;
   const isLoopyVisible = layoutConfig.showLoopy;
   
-  // Dynamically determine grid columns based on width
-  const getGridColumns = () => {
-    const { sidebarWidth } = layoutConfig;
-    if (sidebarWidth < 10) return 0; // No models visible in focus view
-    if (sidebarWidth < 25) return 1; // One model column in integrate view
-    if (sidebarWidth < 40) return 2;
-    if (sidebarWidth < 60) return 3;
-    return 4;
-  };
+  // Determine if we should show models based on view mode
+  const shouldShowModels = viewMode === 'explore';
   
-  // Get CSS grid template columns for proper sizing
+  // Grid layout configuration
   const getGridStyle = () => {
-    const cols = getGridColumns();
+    if (!shouldShowModels) return {};
+    
     return {
       display: 'grid',
-      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-      gap: '1rem',
+      // Reduce from 3 to 2 columns to give more horizontal space
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: '1.5rem',
     };
   };
   
-  // Get the appropriate grid class based on column count
-  const getGridClass = () => {
-    return 'auto-rows-max';
-  };
+  // Grid class for auto row sizing
+  const getGridClass = () => 'auto-rows-max';
   
   // Handler to open modal with a specific model
   const handleExpandModel = (model, title) => {
@@ -622,7 +642,6 @@ const UnifiedInterface = () => {
     // Abort any in-progress API calls
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      abortControllerRef.current = null;
     }
     
     // Reset loading state and close modal
@@ -770,22 +789,17 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       formatModelName(name).toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    // Determine if sidebar content should be shown based on view mode
-    const showSidebarContent = getGridColumns() > 0;
-    
     return (
       <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col overflow-hidden">
-        {/* Header with title and expand/collapse indicator */}
+        {/* Header with title */}
         <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-700">
-          Available Models
-        </h2>
-          
-          
+          <h2 className="text-lg font-semibold text-gray-700">
+            Available Models
+          </h2>
         </div>
         
-        {/* Search Bar - only show if models are visible */}
-        {showSidebarContent && (
+        {/* Search Bar */}
+        {shouldShowModels && (
           <div className="mb-4">
             <div className="relative">
               <input
@@ -805,14 +819,14 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         )}
         
         <div className="flex-1 overflow-y-auto pr-2">
-          {!showSidebarContent ? (
+          {!shouldShowModels ? (
             <div className="text-center py-8">
               <p className="text-gray-500">Models are hidden in focus view</p>
               <button 
-                onClick={() => handleViewModeChange('integrate')}
+                onClick={() => handleViewModeChange('explore')}
                 className="mt-4 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Switch to Integrate View
+                Switch to Explore View
               </button>
             </div>
           ) : filteredModels.length > 0 ? (
@@ -833,28 +847,36 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
                     isSelected 
                       ? 'ring-2 ring-blue-500' 
                       : 'hover:bg-blue-50'
-                    } h-full flex flex-col`}
+                    } h-full flex flex-col overflow-hidden`}
                 >
-                  <div className="p-3 border-b border-gray-200">
+                  <div className="p-4 border-b border-gray-200">
                       <p className="font-medium text-gray-900 truncate">{displayName}</p>
-                      {getGridColumns() === 1 && (
-                        <>
-                    <p className="text-sm text-gray-600 mt-1">{description}</p>
-                    <button
-                      onClick={(e) => handleMergeModel(e, model, displayName)}
-                      className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                    >
-                      Merge With Current
-                    </button>
-                        </>
-                      )}
+                      <p className="text-sm text-gray-600 mt-1">{description}</p>
+                      <div className="flex space-x-2 mt-2">
+                        <button
+                          onClick={(e) => handleMergeModel(e, model, displayName)}
+                          className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        >
+                          Steal
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Call translate function when implemented
+                            console.log("Translate clicked for", displayName);
+                          }}
+                          className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                          Translate
+                        </button>
+                      </div>
                   </div>
-                    <div className="flex-1 min-h-0">
-                  <MermaidPreview 
-                    model={model} 
-                    isSelected={isSelected}
-                  />
-                    </div>
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <MermaidPreview 
+                      model={model} 
+                      isSelected={isSelected}
+                    />
+                  </div>
                 </div>
               );
               })}
@@ -965,30 +987,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
                   title="Workspace" 
                 />
               </>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center">
-                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-700 mb-2">Experimental Viewbox</h3>
-                <p className="text-gray-500 max-w-xs">
-                  The library explore mode provides a comprehensive view of available models.
-                </p>
-                <div className="mt-6 border border-gray-200 rounded-lg p-4 w-full max-w-md">
-                  <p className="italic text-center text-gray-600">
-                    &lt;EXPERIMENTAL AREA FOR MODEL COMPARISONS&gt;
-                  </p>
-                </div>
-                <button 
-                  onClick={() => handleViewModeChange('focus')}
-                  className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Return to Focus View
-                </button>
-              </div>
-            )}
+            ) : null}
           </div>
         </main>
         
