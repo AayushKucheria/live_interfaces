@@ -664,7 +664,10 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">CatCoLab Loopy Visualizer</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Causal Modelling of Systems</h1>
+          <p className="text-sm text-gray-500">Visualize and analyze complex system dynamics</p>
+        </div>
         
         {/* View mode selector */}
         <div className="w-1/4 flex flex-col items-center">
@@ -739,7 +742,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
               <>
                 <LoopyVisualizer 
                   model={selectedModel ? jsonModels[selectedModel] : null} 
-                  title="Loopy Interactive Model" 
+                  title="Workspace" 
                 />
               </>
             ) : (
