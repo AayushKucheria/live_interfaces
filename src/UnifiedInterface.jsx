@@ -282,6 +282,46 @@ const ResponseModal = ({ isOpen, onClose, response, isLoading }) => {
   );
 };
 
+// Help modal component for displaying help content
+const HelpModal = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black bg-opacity-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full flex flex-col">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-600 to-purple-600">
+          <h3 className="text-xl font-semibold text-white">Help Center</h3>
+          <button 
+            onClick={onClose}
+            className="text-white hover:text-gray-200 focus:outline-none"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto max-h-[70vh]">
+          <div className="prose prose-sm max-w-none">
+            {/* Help content will be added later */}
+            <h4 className="font-medium text-gray-900">Getting Started</h4>
+            <p className="text-gray-700">
+              Help content will be added here. This section will include instructions on how to use the application.
+            </p>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UnifiedInterface = () => {
   const [selectedModel, setSelectedModel] = useState('wolfchickens.json');
   const [modelNames, setModelNames] = useState([]);
@@ -303,6 +343,9 @@ const UnifiedInterface = () => {
   
   // Add state for showing response modal
   const [showResponseModal, setShowResponseModal] = useState(false);
+  
+  // Add state for showing help modal
+  const [showHelpModal, setShowHelpModal] = useState(false);
   
   // Add ref for abort controller
   const abortControllerRef = useRef(null);
@@ -663,64 +706,75 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
+      <header className="bg-white shadow-sm px-6 py-3 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Causal Modelling of Systems</h1>
           <p className="text-sm text-gray-500">Visualize and analyze complex system dynamics</p>
         </div>
         
-        {/* View mode selector */}
-        <div className="w-1/4 flex flex-col items-center">
-          <div className="flex justify-between w-full mb-1">
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'focus' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Focus</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'integrate' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Integrate</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'explore' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Explore</span>
-          </div>
-          <div className="relative w-full h-8">
-            {/* Background track */}
-            <div 
-              className="absolute left-0 right-0 top-1/2 h-1 -mt-0.5 rounded-full"
-              style={{
-                background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899)'
-              }}
-            ></div>
-            
-            {/* Slider track indicator - snaps to one of three positions */}
-            <div 
-              className="absolute left-0 top-1/2 h-3 -mt-1.5 bg-white rounded-full shadow border border-gray-200 transition-all duration-300"
-              style={{
-                left: viewMode === 'focus' ? '0%' : viewMode === 'integrate' ? '50%' : '100%',
-                transform: 'translateX(-50%)',
-                width: '12px'
-              }}
-            ></div>
-            
-            {/* Mode selection buttons */}
-            <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'focus' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('focus')}
-              >
-                {viewMode === 'focus' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'integrate' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('integrate')}
-              >
-                {viewMode === 'integrate' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'explore' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('explore')}
-              >
-                {viewMode === 'explore' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
+        {/* View mode selector - centered */}
+        <div className="flex-1 flex justify-center">
+          <div className="w-64 flex flex-col items-center">
+            <div className="flex justify-between w-full mb-1">
+              <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'focus' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Focus</span>
+              <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'integrate' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Integrate</span>
+              <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'explore' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Explore</span>
+            </div>
+            <div className="relative w-full h-8">
+              {/* Background track */}
+              <div 
+                className="absolute left-0 right-0 top-1/2 h-1 -mt-0.5 rounded-full"
+                style={{
+                  background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899)'
+                }}
+              ></div>
+              
+              {/* Slider track indicator - snaps to one of three positions */}
+              <div 
+                className="absolute left-0 top-1/2 h-3 -mt-1.5 bg-white rounded-full shadow border border-gray-200 transition-all duration-300"
+                style={{
+                  left: viewMode === 'focus' ? '0%' : viewMode === 'integrate' ? '50%' : '100%',
+                  transform: 'translateX(-50%)',
+                  width: '12px'
+                }}
+              ></div>
+              
+              {/* Mode selection buttons */}
+              <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
+                <button 
+                  className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                    ${viewMode === 'focus' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  onClick={() => handleViewModeChange('focus')}
+                >
+                  {viewMode === 'focus' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                </button>
+                <button 
+                  className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                    ${viewMode === 'integrate' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  onClick={() => handleViewModeChange('integrate')}
+                >
+                  {viewMode === 'integrate' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                </button>
+                <button 
+                  className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                    ${viewMode === 'explore' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  onClick={() => handleViewModeChange('explore')}
+                >
+                  {viewMode === 'explore' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        
+        {/* Help button */}
+        <button
+          onClick={() => setShowHelpModal(true)}
+          className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center hover:from-blue-600 hover:to-purple-600 shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          aria-label="Help"
+        >
+          <span className="text-xl font-semibold">?</span>
+        </button>
       </header>
       
       {/* Main content with sidebar layout */}
@@ -806,6 +860,12 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         onClose={() => setShowResponseModal(false)}
         response={claudeResponse}
         isLoading={loadingResponse}
+      />
+      
+      {/* Help modal */}
+      <HelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
       />
     </div>
   );
