@@ -187,7 +187,6 @@ const ModificationThreads = () => {
   
   const handleOptionClick = (option) => {
     setSelectedOption(option.id === selectedOption ? null : option.id);
-    console.log(`Selected option: ${option.label} - ${option.description}`);
   };
   
   return (
@@ -392,7 +391,6 @@ const UnifiedInterface = () => {
   
   // Handle view mode changes
   const handleViewModeChange = (mode) => {
-    console.log(`View mode changed to: ${mode}`);
     setViewMode(mode);
   };
   
@@ -458,8 +456,6 @@ const UnifiedInterface = () => {
   
   // Handler for submitting feedback and merging the model
   const handleMergeSubmit = async (feedback) => {
-    console.log('User feedback:', feedback);
-    
     // Show loading state
     setLoadingResponse(true);
     
@@ -511,8 +507,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         const jsonString = jsonMatch[1].trim();
         mergedModel = JSON.parse(jsonString);
         
-        console.log('Successfully parsed merged model:', mergedModel);
-        
         // Create a new merged model name
         const baseModelName = `merged_${formatModelName(currentModelName).replace(/\s+/g, '_')}_${mergeModelTitle.replace(/\s+/g, '_')}`;
         
@@ -529,8 +523,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         setMergeModalOpen(false);
         setShowResponseModal(true);
       } catch (jsonError) {
-        console.error('Error parsing JSON response:', jsonError);
-        
         // If we can't parse the JSON, just show the text response
         setClaudeResponse(`Claude provided a response but it couldn't be parsed as a valid model. Here's what Claude said: ${claudeResponse}`);
         
@@ -542,8 +534,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         setSelectedModel(modelToMergeName);
       }
     } catch (error) {
-      console.error('Error getting response from Claude:', error);
-      
       // Don't show error if the request was cancelled
       if (error.message !== 'Request cancelled') {
         setClaudeResponse('Sorry, there was an error getting a response from Claude.');
