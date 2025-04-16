@@ -375,11 +375,11 @@ const UnifiedInterface = () => {
   const VIEW_MODE_LAYOUTS = {
     focus: {
       sidebarWidth: 0, // No models visible
-      showModificationThreads: true,
+      showModificationThreads: false,
       showLoopy: true
     },
     integrate: {
-      sidebarWidth: 20, // One model column
+      sidebarWidth: 0, // No models visible
       showModificationThreads: true,
       showLoopy: true
     },
@@ -779,8 +779,8 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       
       {/* Main content with sidebar layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar with modification threads (visible in focus and integrate views) */}
-        {isModificationThreadsVisible && (
+        {/* Left sidebar with modification threads (visible only in integrate view and should be on left for other views) */}
+        {isModificationThreadsVisible && viewMode !== 'integrate' && (
           <aside className="w-72 transition-all duration-300 ease-in-out">
             <ModificationThreads />
           </aside>
@@ -826,12 +826,16 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
           </div>
         </main>
         
-        {/* Right sidebar with model selection and Mermaid previews */}
+        {/* Right sidebar for model selection (in explore view) or modification threads (in integrate view) */}
         <aside 
-          className="border-l border-gray-200 p-4 overflow-y-auto transition-all duration-500 ease-in-out"
-          style={{ width: `${layoutConfig.sidebarWidth}%` }}
+          className={`${viewMode === 'integrate' ? 'w-72' : ''} border-l border-gray-200 p-4 overflow-y-auto transition-all duration-500 ease-in-out`}
+          style={viewMode !== 'integrate' ? { width: `${layoutConfig.sidebarWidth}%` } : {}}
         >
-          <ModelSidebar />
+          {viewMode === 'integrate' && isModificationThreadsVisible ? (
+            <ModificationThreads />
+          ) : (
+            <ModelSidebar />
+          )}
         </aside>
       </div>
       
