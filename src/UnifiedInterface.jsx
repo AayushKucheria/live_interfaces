@@ -1178,17 +1178,17 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">CatCoLab Loopy Visualizer</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Live World Models</h1>
         
         {/* Home button to return to landing page - Moved to center */}
         <button
           onClick={() => setShowLanding(true)}
-          className="px-4 py-2 text-sm bg-transparent text-gray-600 border border-gray-200 rounded-md hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 flex items-center transition-colors duration-150"
+          className="px-4 py-2 text-sm bg-gray-50 text-purple-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2 flex items-center border border-gray-200"
         >
-          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          <svg className="w-8 h-8 mr-0" fill="none" viewBox="0 0 48 40" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M 7 19 C 11 21 13 15 17 21 C 21 15 23 21 27 19 M 27 9 C 25 13 21 11 17 17 M 23 17 C 25 15 25 17 27 15 M 17 29 v 2 L 15 29 C 17 25 15 13 17 7 C 19 13 17 25 19 29 L 17 31 M 7 9 C 9 13 13 11 17 17 M 11 17 C 9 15 9 17 7 15 M 27 9 C 25 13 21 11 17 17 M 23 7 C 21 9 23 9 21 11 M 11 7 C 13 9 11 9 13 11" />
           </svg>
-          Model Origins
+          <span className="text-base font-medium">Model Origins</span>
         </button>
 
         {/* View mode selector - Moved to right */}
