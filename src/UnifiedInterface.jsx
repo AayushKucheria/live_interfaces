@@ -1493,7 +1493,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       {/* Header */}
       <header className="bg-white shadow-sm px-6 py-3 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Causal Modelling of Systems</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Live World Models</h1>
           <p className="text-sm text-gray-500">Visualize and analyze complex system dynamics</p>
         </div>
         
