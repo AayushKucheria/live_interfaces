@@ -4,6 +4,7 @@ import MermaidDiagram from './components/MermaidDiagram';
 import { modelToMermaid, parseModelData } from './utils/mermaidUtils';
 import { jsonModels, formatModelName, getModelNames, addModelToLibrary } from './utils/jsonModelLoader';
 import { sendMessageToClaude } from './services/openRouterService';
+import { generateThreadSuggestions } from './services/aiThreadService';
 
 // Landing Page component
 const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
@@ -358,14 +359,37 @@ const MermaidModal = ({ isOpen, onClose, model, title }) => {
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+                // Call merge model with current title
+                handleMergeModel(e, model, title);
+              }}
+              className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            >
+              Steal
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                // Call translate function when implemented
+                console.log("Translate clicked for", title);
+              }}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Translate
+            </button>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div className="p-6 flex-1 overflow-auto">
           <MermaidDiagram chart={mermaidCode} />
@@ -482,21 +506,28 @@ const MergeModal = ({ isOpen, onClose, model, title, onSubmit, isLoading, onCanc
 
 // Memoized MermaidPreview component to avoid unnecessary re-renders
 const MermaidPreview = memo(({ model, isSelected }) => {
-  // Memoize the mermaid code generation
+  // Build mermaid code from model
   const mermaidCode = useMemo(() => {
+    // Parse the model and generate simplified mermaid
     const parsedModel = parseModelData(model);
-    return modelToMermaid(parsedModel, { direction: 'TB', nodeStyle: 'box' });
+    return modelToMermaid(parsedModel);
   }, [model]);
   
   return (
-    <div className="p-2 bg-gray-50 rounded-b-md">
-      <div className="mermaid-preview" style={{ maxHeight: '150px', overflow: 'hidden' }}>
+    <div className="h-48 flex flex-col items-center justify-center p-1 overflow-hidden">
+      <div 
+        className={`w-full h-full flex items-center justify-center transition-opacity duration-200 ${!isSelected ? 'opacity-70' : 'opacity-100'} overflow-hidden`}
+      >
         <MermaidDiagram 
           chart={mermaidCode} 
           config={{ 
             theme: 'neutral',
             fontFamily: 'system-ui, sans-serif',
-            flowchart: { curve: 'basis', htmlLabels: true }
+            flowchart: { curve: 'basis', htmlLabels: true },
+            // Add more restrictive sizing to keep diagrams contained
+            width: '100%',
+            height: '100%',
+            fit: true
           }} 
           compact={true}
         />
@@ -508,308 +539,416 @@ const MermaidPreview = memo(({ model, isSelected }) => {
   );
 });
 
-// Model Library Overlay component that displays model cards in a grid layout
-const ModelLibraryOverlay = ({ isOpen, onClose, models, onSelectModel }) => {
-  const [selectedModels, setSelectedModels] = useState([]);
-  const [showingComparison, setShowingComparison] = useState(false);
+// Modification threads component with list of options
+const ModificationThreads = ({ model, forceRefresh }) => {
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [customThread, setCustomThread] = useState('');
+  const [showDetailView, setShowDetailView] = useState(false);
   
-  if (!isOpen) return null;
+  // State for AI-generated threads
+  const [threadOptions, setThreadOptions] = useState([
+    { id: 'add_variable', label: 'Add another variable', description: 'Pull this thread to introduce a new factor to the system' },
+    { id: 'increase_nuance', label: 'Increase nuance', description: 'Unravel this thread to add more detail to existing relationships' },
+    { id: 'simplify', label: 'Simplify', description: 'Follow this thread to reduce complexity while preserving key dynamics' },
+  ]);
   
-  // Format model name by removing .json extension and adding spaces
-  const formatModelName = (filename) => {
-    return filename
-      .replace('.json', '')
-      .split(/(?=[A-Z])|[-_]/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
+  // State for AI-generated detailed suggestions
+  const [threadSuggestions, setThreadSuggestions] = useState({
+    add_variable: [
+      { 
+        id: 'vegetation', 
+        title: 'Vegetation',
+        description: 'Would have a positive effect on rabbits (more food = more rabbits) and could create a three-variable causal loop where: more vegetation → more rabbits → more foxes → fewer rabbits → more vegetation (as fewer rabbits consume less vegetation).'
+      },
+      { 
+        id: 'disease', 
+        title: 'Disease',
+        description: 'Could affect either fox or rabbit populations negatively, introducing a new dynamic where disease outbreaks might temporarily disrupt the predator-prey balance, causing population oscillations.'
+      },
+      { 
+        id: 'human_hunting', 
+        title: 'Human is Hunting',
+        description: 'Would have a negative effect on fox populations, potentially leading to rabbit population booms when fox numbers are reduced, which could then lead to vegetation depletion.'
+      }
+    ],
+    increase_nuance: [
+      { 
+        id: 'age_structure', 
+        title: 'Age Structure',
+        description: 'Adding age categories to rabbits and foxes would allow for more realistic reproduction and mortality rates.'
+      },
+      { 
+        id: 'seasonal_effects', 
+        title: 'Seasonal Effects',
+        description: 'Introduce temporal dynamics where predator-prey relationships change throughout the year.'
+      }
+    ],
+    simplify: [
+      { 
+        id: 'linear_relationship', 
+        title: 'Linear Relationship',
+        description: 'Simplify the feedback loops to focus only on the direct relationship between foxes and rabbits.'
+      },
+      { 
+        id: 'population_equilibrium', 
+        title: 'Population Equilibrium',
+        description: 'Focus on the equilibrium point rather than the dynamics leading to it.'
+      }
+    ],
+    explore_more: [
+      { 
+        id: 'habitat_fragmentation', 
+        title: 'Habitat Fragmentation',
+        description: 'Explore how dividing the ecosystem into separate regions affects population dynamics.'
+      },
+      { 
+        id: 'genetic_adaptation', 
+        title: 'Genetic Adaptation',
+        description: 'Model how foxes and rabbits might evolve strategies over time in response to each other.'
+      }
+    ]
+  });
   
-  const toggleModelSelection = (filename) => {
-    if (selectedModels.includes(filename)) {
-      // Remove model from selection
-      setSelectedModels(selectedModels.filter(name => name !== filename));
-    } else if (selectedModels.length < 3) {
-      // Add model to selection only if less than 3 models are currently selected
-      setSelectedModels([...selectedModels, filename]);
+  // State for loading status
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Fetch thread suggestions only when explicitly requested (view change or refresh button)
+  useEffect(() => {
+    if (model && forceRefresh) {
+      updateThreadSuggestions();
     }
-    // If already 3 models selected, do nothing
-  };
+  }, [model, forceRefresh]);
   
-  // Generate simplified mermaid code for each model
-  const generateSimplifiedMermaid = (model) => {
-    const parsedModel = parseModelData(model);
-    // Use standard mermaid conversion with minimal styling options
-    return modelToMermaid(parsedModel);
-  };
-  
-  // Handle compare button click
-  const handleCompareClick = () => {
-    if (selectedModels.length > 0) {
-      setShowingComparison(true);
+  // Function to update thread suggestions from AI
+  const updateThreadSuggestions = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Get suggestions from Claude
+      const suggestions = await generateThreadSuggestions(model);
+      
+      if (suggestions && suggestions.threads) {
+        // Update thread options
+        setThreadOptions(suggestions.threads.map(thread => ({
+          id: thread.id,
+          label: thread.label,
+          description: thread.description
+        })));
+        
+        // Update detailed suggestions
+        const detailedSuggestions = {};
+        suggestions.threads.forEach(thread => {
+          detailedSuggestions[thread.id] = thread.suggestions;
+        });
+        
+        setThreadSuggestions(detailedSuggestions);
+      }
+    } catch (error) {
+      console.error('Error updating thread suggestions:', error);
+      // Keep the default suggestions on error
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  // Reset comparison view
-  const resetComparison = () => {
-    setShowingComparison(false);
+  // Function to manually refresh thread suggestions
+  const handleRefreshThreads = () => {
+    updateThreadSuggestions();
   };
-  
-  // Note: This will now use the central grid layout functions from UnifiedInterface
-  // Get CSS grid template columns for proper sizing
-  const getGridStyle = () => {
-    // For the overlay, always use 3 columns for consistent layout
-    return {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      gap: '1rem',
+
+  const handleOptionClick = (option) => {
+    if (selectedOption === option.id) {
+      // If already selected, toggle detail view
+      setShowDetailView(!showDetailView);
+    } else {
+      // If new option selected, show the details
+      setSelectedOption(option.id);
+      setShowDetailView(true);
+    }
+  };
+
+  const handleDetailedSuggestionClick = (suggestion) => {
+    // Log the selected suggestion
+    console.log(`Implementing suggestion: ${suggestion.title}`);
+    
+    // If there's no model, we can't do anything
+    if (!model || !model.nodes) {
+      console.error('Cannot implement suggestion - no valid model available');
+      return;
+    }
+    
+    // Prepare a system prompt for Claude to implement the suggestion
+    const systemPrompt = `
+    You are an AI assistant specialized in causal modeling.
+    Your task is to implement a specific modification to a causal model.
+    
+    The current model will be provided in a simplified JSON format.
+    
+    Return ONLY the modified model as a valid JSON object with the following structure:
+    {
+      "nodes": [
+        { "id": "node_id", "name": "Node Name" },
+        // more nodes...
+      ],
+      "edges": [
+        { "from": "source_node_id", "to": "target_node_id", "type": "positive|negative" },
+        // more edges...
+      ],
+      "theory": "causal-loop",
+      "type": "model"
+    }
+    
+    Do not include any explanation or additional text, only return valid JSON.
+    Ensure all node IDs are unique and edges reference valid node IDs.
+    Make minimal changes to implement the requested modification.
+    `;
+    
+    // Prepare the model in a simplified format for Claude
+    const simplifiedModel = {
+      nodes: model.nodes.map(n => ({ id: n.id.toString(), name: n.name })),
+      edges: (model.edges || []).map(e => ({ 
+        from: e.from.toString(), 
+        to: e.to.toString(), 
+        type: e.strength < 0 ? 'negative' : 'positive' 
+      })),
+      theory: model.theory || 'causal-loop',
+      type: 'model'
     };
+    
+    // Prepare user message with the model and the suggestion
+    const userMessage = `
+    Here is the current causal model:
+    ${JSON.stringify(simplifiedModel, null, 2)}
+    
+    Implement this modification: "${suggestion.title}"
+    Description: ${suggestion.description}
+    
+    Return the modified model.
+    `;
+    
+    // Show loading state
+    setIsLoading(true);
+    
+    // Send to Claude
+    sendMessageToClaude(userMessage, systemPrompt)
+      .then(response => {
+        try {
+          // Extract JSON from the response
+          const jsonMatch = response.match(/\{[\s\S]*\}/);
+          let modifiedModel;
+          
+          if (jsonMatch) {
+            modifiedModel = JSON.parse(jsonMatch[0]);
+          } else {
+            // If no JSON pattern found, try parsing directly
+            modifiedModel = JSON.parse(response);
+          }
+          
+          // Clear the detail view and selection after implementation
+          setShowDetailView(false);
+          setSelectedOption(null);
+          
+          // Convert to Loopy format for direct update
+          // This simplified version doesn't rely on global event
+          const loopyFormat = {
+            nodes: modifiedModel.nodes.map((node, index) => ({
+              id: parseInt(node.id) || index,
+              name: node.name || `Node ${index + 1}`,
+              x: Math.random() * 800 + 100, // Random position
+              y: Math.random() * 400 + 50,  // Random position
+              hue: index % 6  // Color based on index
+            })),
+            edges: modifiedModel.edges.map((edge, index) => ({
+              id: index,
+              from: parseInt(edge.from) || 0,
+              to: parseInt(edge.to) || 0,
+              strength: edge.type === 'negative' ? -1 : 1,
+              arc: 0
+            })),
+            labels: []
+          };
+          
+          // Find the Loopy visualizer reference in the parent UnifiedInterface
+          // and update the model directly
+          if (window.loopyVisualizerRef && window.loopyVisualizerRef.current) {
+            window.loopyVisualizerRef.current.updateModel(loopyFormat);
+            console.log('Updated Loopy model via global ref');
+          } else {
+            console.error('Could not find global loopyVisualizerRef');
+          }
+          
+        } catch (error) {
+          console.error('Error parsing modified model:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      })
+      .catch(error => {
+        console.error('Error implementing suggestion:', error);
+        setIsLoading(false);
+      });
+  };
+
+  const handleBackClick = () => {
+    setShowDetailView(false);
+  };
+
+  const handleCustomSubmit = (e) => {
+    e.preventDefault();
+    if (customThread.trim()) {
+      // Handle custom thread submission
+      console.log('Custom thread:', customThread);
+      setCustomThread('');
+    }
   };
   
-  // Get the appropriate grid class based on column count
-  const getGridClass = () => {
-    return 'auto-rows-max';
-  };
-  
-  return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex flex-col overflow-auto">
-      {/* Main content container with styling matching visualizer */}
-      <div className="flex flex-col m-4 bg-white rounded-lg shadow-md h-full">
-        {/* Header with close button */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <div className="w-1/3">
-            {/* Left side - Visualizer button */}
+  // If showing detail view, render the suggestions for the selected option
+  if (showDetailView && selectedOption) {
+    const suggestions = threadSuggestions[selectedOption] || [];
+    
+    return (
+      <div className="h-full flex flex-col p-4 overflow-auto">
+        <div className="mb-4 flex items-center">
+          <button 
+            onClick={handleBackClick}
+            className="mr-2 p-1 rounded-full hover:bg-gray-100"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h3 className="text-lg font-semibold text-gray-800">
+            Thread: {threadOptions.find(opt => opt.id === selectedOption)?.label.replace(' →', '')}
+          </h3>
+        </div>
+        
+        <div className="space-y-4 mb-4">
+          {suggestions.map(suggestion => (
             <div 
-              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              onClick={onClose}
+              key={suggestion.id}
+              className="p-4 border border-gray-300 rounded-lg hover:border-blue-400 cursor-pointer transition-all duration-200 hover:-translate-x-1"
+              onClick={() => handleDetailedSuggestionClick(suggestion)}
             >
-              <span>📊 Visualizer</span>
+              <h4 className="font-medium text-gray-900 mb-1">{suggestion.title}</h4>
+              <p className="text-sm text-gray-700">{suggestion.description}</p>
             </div>
-          </div>
-          
-          {/* Center - Title */}
-          <h2 className="text-2xl font-bold text-gray-800 text-center w-1/3">Model Directory</h2>
-          
-          {/* Right side - Close button */}
-          <div className="w-1/3 flex justify-end">
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+          ))}
+        </div>
+        
+        <div className="mt-auto pt-4 border-t border-gray-200">
+          <p className="text-sm font-medium text-gray-700 mb-2">Describe what you'd like in more detail</p>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (customThread.trim()) {
+                console.log('Custom detail:', customThread);
+                setCustomThread('');
+              }
+            }} 
+            className="flex items-center"
+          >
+            <input
+              type="text"
+              value={customThread}
+              onChange={(e) => setCustomThread(e.target.value)}
+              placeholder="Add more specifics about this thread..."
+              className="flex-1 px-3 py-2 border-b-2 border-gray-300 focus:border-blue-500 outline-none transition-colors"
+            />
+            <button
+              type="submit"
+              className="ml-2 text-blue-500 hover:text-blue-700"
+              disabled={!customThread.trim()}
             >
-              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-          </div>
-        </div>
-        
-        {/* Main layout with three columns */}
-        <div className="flex flex-1 overflow-hidden p-4">
-          {/* Left column */}
-          <div className="w-1/4 flex flex-col space-y-4 mr-4">
-            {/* Future prompting area */}
-            <div className="border border-gray-200 rounded-lg p-4 flex-1 bg-gray-50">
-              <p className="text-gray-600 italic">
-                &lt;Future prompting area for searching, including by structure, subgraph size and shape, reinforcing and balancing loops, application domain etc&gt;
-              </p>
-            </div>
-            
-            {/* Placeholder info area */}
-            <div className="border border-gray-200 rounded-lg p-4 flex-1 bg-gray-50">
-              <p className="text-gray-600 italic">
-                &lt;Placeholder space for more information about the model's inspiration, central mechanism/functional difference from other options.&gt;
-              </p>
-            </div>
-          </div>
-          
-          {/* Center and right column for model display */}
-          <div className="w-3/4 flex flex-col overflow-hidden">
-            {/* Fixed controls section */}
-            <div className="sticky top-0 bg-white z-10 pb-4">
-              {/* Compare Selection button */}
-              <div className="flex justify-center mb-6">
-                <div 
-                  className={`px-6 py-2 bg-orange-500 text-white rounded-md ${selectedModels.length > 0 ? 'cursor-pointer hover:bg-orange-600' : 'opacity-70 cursor-not-allowed'}`}
-                  onClick={handleCompareClick}
-                >
-                  Compare Selection ({selectedModels.length}/3)
-                </div>
-              </div>
-              
-              {/* Experimental area */}
-              <div className="mb-6">
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  {showingComparison ? (
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <h3 className="text-gray-800 font-bold">COMPARING MODELS</h3>
-                        <button 
-                          onClick={resetComparison}
-                          className="text-gray-600 hover:text-gray-800 focus:outline-none"
-                        >
-                          Reset
-                        </button>
-                      </div>
-                      <div className="flex justify-center space-x-4">
-                        {selectedModels.map((filename) => (
-                          <div key={filename} className="w-1/3 border border-gray-300 rounded-lg p-2 bg-white">
-                            <div className="h-32 flex items-center justify-center">
-                              <MermaidDiagram 
-                                chart={generateSimplifiedMermaid(models[filename])} 
-                                config={{ 
-                                  theme: 'neutral',
-                                  fontFamily: 'system-ui, sans-serif',
-                                  flowchart: { curve: 'basis', htmlLabels: true },
-                                }} 
-                                compact={true}
-                              />
-                            </div>
-                            <div className="text-gray-700 text-sm font-medium text-center mt-2">
-                              {formatModelName(filename)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="italic text-center text-gray-600">&lt;EXPERIMENTAL AREA FOR POSSIBLE COMPOSITIONS&gt;</p>
-                  )}
-                </div>
-                
-                <div className="mt-4 flex justify-center">
-                  <div className={`inline-block px-6 py-2 bg-green-600 text-white rounded-md ${showingComparison ? 'cursor-pointer hover:bg-green-700' : 'opacity-70'}`}>
-                    Confirm Compose
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Scrollable model grid */}
-            <div className="overflow-y-auto h-full">
-              {/* Model Grid - all models in 3 columns */}
-              <div className={`${getGridClass()}`} style={getGridStyle()}>
-                {Object.keys(models).map((filename, index) => {
-                  const model = models[filename];
-                  const displayName = formatModelName(filename);
-                  const isSelected = selectedModels.includes(filename);
-                  const mermaidCode = generateSimplifiedMermaid(model);
-                  
-                  return (
-                    <div 
-                      key={filename}
-                      className={`border ${isSelected ? 'border-orange-500 ring-2 ring-orange-500' : 'border-gray-200'} rounded-lg overflow-hidden bg-white shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md`}
-                      onClick={() => onSelectModel(filename)}
-                    >
-                      <div className="p-4 flex flex-col items-center">
-                        {/* Model Graph Visualization */}
-                        <div className="mb-4 h-32 w-full flex items-center justify-center">
-                          <MermaidDiagram 
-                            chart={mermaidCode} 
-                            config={{ 
-                              theme: 'neutral',
-                              fontFamily: 'system-ui, sans-serif',
-                              flowchart: { curve: 'basis', htmlLabels: true },
-                            }} 
-                            compact={true}
-                          />
-                        </div>
-                        
-                        <div className="text-gray-800 text-sm font-medium mb-2 text-center">
-                          {displayName}
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex space-x-4">
-                          <button 
-                            className={`w-10 h-10 ${isSelected ? 'bg-orange-600' : 'bg-blue-700'} border border-blue-500 rounded-md text-white flex items-center justify-center hover:bg-blue-600 focus:outline-none ${selectedModels.length >= 3 && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleModelSelection(filename);
-                            }}
-                          >
-                            {isSelected ? (
-                              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            ) : (
-                              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                            )}
-                          </button>
-                          <button 
-                            className="w-10 h-10 bg-transparent border border-blue-500 rounded-md text-blue-400 flex items-center justify-center hover:bg-blue-900 focus:outline-none"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          </form>
         </div>
       </div>
-    </div>
-  );
-};
-
-// Modification threads component with list of options
-const ModificationThreads = () => {
-  const [selectedOption, setSelectedOption] = useState(null);
-
-  // Simplified options - just keeping 3 main ones
-  const options = [
-    { id: 'M1', label: 'M1', description: 'Balance' },
-    { id: 'M2', label: 'M2', description: 'Reinforce' },
-    { id: 'M3', label: 'M3', description: 'Enhance' }
-  ];
+    );
+  }
   
-  const handleOptionClick = (option) => {
-    setSelectedOption(option.id === selectedOption ? null : option.id);
-    console.log(`Selected option: ${option.label} - ${option.description}`);
-  };
-  
+  // Otherwise show the main thread options
   return (
-    <div className="h-full flex flex-col p-4 gap-2 overflow-auto">
-      {options.map((option) => {
-        const isSelected = option.id === selectedOption;
-        
-        return (
-          <div 
-            key={option.id}
-            className={`flex flex-col p-4 rounded-lg shadow-sm cursor-pointer transition-all duration-200
-              ${isSelected 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-blue-700 border border-gray-100 hover:bg-blue-50'
-              }`}
-            onClick={() => handleOptionClick(option)}
-          >
-            <div className={`flex items-center justify-center h-12 w-12 rounded-full mb-4
-              ${isSelected ? 'bg-white bg-opacity-20' : 'bg-blue-50'}`
-            }>
-              <span className={`font-medium text-xl ${isSelected ? 'text-white' : 'text-blue-600'}`}>
-                {option.label}
-              </span>
-            </div>
-            <span className="font-medium">{option.description}</span>
-          </div>
-        );
-      })}
-      
-      {/* Title at the bottom */}
-      <div className="mt-auto pt-4 border-t border-gray-200">
-        <div className="flex items-center justify-center space-x-2">
-          <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+    <div className="h-full flex flex-col p-4 gap-4 overflow-auto">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-semibold text-gray-800">
+          Pull thread to explore
+        </h3>
+        <button
+          onClick={handleRefreshThreads}
+          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+          title="Refresh threads"
+        >
+          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span className="text-sm font-semibold text-gray-700">Modification Threads</span>
-        </div>
+        </button>
       </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+          <span className="ml-2 text-gray-600">Analyzing model...</span>
+        </div>
+      ) : (
+        <>
+          {threadOptions.map((option) => {
+            const isSelected = option.id === selectedOption;
+            
+            return (
+              <div 
+                key={option.id}
+                className={`flex flex-col p-3.5 rounded-lg border ${
+                  isSelected 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : 'border-gray-300 bg-white hover:border-gray-400'
+                } cursor-pointer transition-all duration-200 shadow-sm hover:-translate-x-1`}
+                onClick={() => handleOptionClick(option)}
+              >
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className="font-medium text-gray-800">{option.label} {option.id !== 'explore_more' ? '→' : ''}</span>
+                </div>
+                {isSelected && !showDetailView && (
+                  <p className="mt-2 text-sm text-gray-600">{option.description}</p>
+                )}
+              </div>
+            );
+          })}
+          
+          {/* Custom thread input - now part of the list */}
+          <form 
+            onSubmit={handleCustomSubmit} 
+            className="flex flex-col p-3.5 rounded-lg border border-dashed border-gray-300 bg-white hover:border-blue-400 transition-all duration-200"
+          >
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 4v16m-8-8h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <input
+                type="text"
+                value={customThread}
+                onChange={(e) => setCustomThread(e.target.value)}
+                placeholder="What would you like to pull on..."
+                className="flex-1 bg-transparent border-none outline-none text-gray-800 font-medium placeholder-gray-400"
+              />
+              <button
+                type="submit"
+                className="ml-2 text-blue-500 hover:text-blue-700"
+                disabled={!customThread.trim()}
+              >
+                →
+              </button>
+            </div>
+          </form>
+        </>
+      )}
+      
+      <div className="flex-1"></div> {/* Spacer to push content to top */}
     </div>
   );
 };
@@ -866,6 +1005,46 @@ const ResponseModal = ({ isOpen, onClose, response, isLoading }) => {
   );
 };
 
+// Help modal component for displaying help content
+const HelpModal = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black bg-opacity-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full flex flex-col">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-600 to-purple-600">
+          <h3 className="text-xl font-semibold text-white">Help Center</h3>
+          <button 
+            onClick={onClose}
+            className="text-white hover:text-gray-200 focus:outline-none"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto max-h-[70vh]">
+          <div className="prose prose-sm max-w-none">
+            {/* Help content will be added later */}
+            <h4 className="font-medium text-gray-900">Getting Started</h4>
+            <p className="text-gray-700">
+              Help content will be added here. This section will include instructions on how to use the application.
+            </p>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UnifiedInterface = () => {
   // Add state to control whether to show the landing page
   const [showLanding, setShowLanding] = useState(true);
@@ -878,9 +1057,6 @@ const UnifiedInterface = () => {
   const [modalModel, setModalModel] = useState(null);
   const [modalTitle, setModalTitle] = useState('');
   
-  // Add state for model library overlay
-  const [libraryOpen, setLibraryOpen] = useState(false);
-  
   // Add state for merge modal
   const [mergeModelTitle, setMergeModelTitle] = useState('');
   
@@ -892,6 +1068,29 @@ const UnifiedInterface = () => {
   
   // Add state for showing response modal
   const [showResponseModal, setShowResponseModal] = useState(false);
+  
+  // Add state for showing help modal
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  
+  // Add state for the current loopy model
+  const [currentLoopyModel, setCurrentLoopyModel] = useState(null);
+  
+  // Add state for thread refresh trigger
+  const [threadRefreshTrigger, setThreadRefreshTrigger] = useState(false);
+  
+  // Reference to the LoopyVisualizer component
+  const loopyVisualizerRef = useRef(null);
+  
+  // Expose the ref globally for ModificationThreads component to use
+  // This simplifies the communication between components
+  useEffect(() => {
+    window.loopyVisualizerRef = loopyVisualizerRef;
+    
+    // Cleanup on unmount
+    return () => {
+      window.loopyVisualizerRef = null;
+    };
+  }, []);
   
   // Add ref for abort controller
   const abortControllerRef = useRef(null);
@@ -913,103 +1112,70 @@ const UnifiedInterface = () => {
       setSelectedModel(modelNames[0]);
     }
   }, []);
-  // Add a new state for the view mode 
-  const [viewMode, setViewMode] = useState('detail'); // Options: 'detail', 'composition', 'overview'
   
-  // Add state for sidebar width (1-4 models wide)
-  const [sidebarWidth, setSidebarWidth] = useState(0); // Width percentage (0% = detail, 20% = composition, 65% = overview)
-  const [isDragging, setIsDragging] = useState(false);
+  // Add a new state for the view mode 
+  const [viewMode, setViewMode] = useState('focus'); // Options: 'focus', 'integrate', 'explore'
+  
+  // Layout configuration constants for each view mode
+  const VIEW_MODE_LAYOUTS = {
+    focus: {
+      sidebarWidth: 0, // No models visible
+      showModificationThreads: false,
+      showLoopy: true
+    },
+    integrate: {
+      sidebarWidth: 0, // No models visible
+      showModificationThreads: true,
+      showLoopy: true
+    },
+    explore: {
+      sidebarWidth: 65, // Full library view
+      showModificationThreads: false,
+      showLoopy: true
+    }
+  };
+  
+  // Handler for LoopyVisualizer model change events
+  const handleLoopyModelChange = (updatedModel) => {
+    console.log('Loopy model updated:', updatedModel);
+    setCurrentLoopyModel(updatedModel);
+  };
   
   // Handle view mode changes
   const handleViewModeChange = (mode) => {
-    console.log(`View mode changed to: ${mode}`);
+    const previousMode = viewMode;
     setViewMode(mode);
     
-    // Set fixed sidebar width based on view mode
-    if (mode === 'detail') {
-      setSidebarWidth(0); // No models visible
-    } else if (mode === 'composition') {
-      setSidebarWidth(20); // One model column
-    } else if (mode === 'overview') {
-      setSidebarWidth(65); // Full library view
+    // If changing to integrate view, trigger thread refresh
+    if (mode === 'integrate' && previousMode !== 'integrate') {
+      setThreadRefreshTrigger(prev => !prev);
     }
   };
   
-  // Handle mouse down on the resize handle
-  const handleMouseDown = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+  // Get current layout configuration
+  const layoutConfig = VIEW_MODE_LAYOUTS[viewMode];
   
-  // Handle mouse move while dragging
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    
-    const containerWidth = document.body.clientWidth;
-    const mouseX = e.clientX;
-    const newWidth = Math.round(100 - (mouseX / containerWidth * 100));
-    
-    // Snap to one of the three positions based on drag position
-    if (newWidth < 10) {
-      setSidebarWidth(0);
-      setViewMode('detail');
-    } else if (newWidth < 40) {
-      setSidebarWidth(20);
-      setViewMode('composition');
-    } else {
-      setSidebarWidth(65);
-      setViewMode('overview');
-    }
-  };
+  // Determine visibility of components based on layout config
+  const isModificationThreadsVisible = layoutConfig.showModificationThreads;
+  const isLoopyVisible = layoutConfig.showLoopy;
   
-  // Handle mouse up to end dragging
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  // Determine if we should show models based on view mode
+  const shouldShowModels = viewMode === 'explore';
   
-  // Add event listeners for dragging
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    }
-    
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-  
-  // Determine visibility of components based on view mode
-  const isModificationThreadsVisible = sidebarWidth < 40; // Visible in detail and composition views
-  const isLoopyVisible = sidebarWidth < 40; // Show Loopy in detail and composition views
-  
-  // Dynamically determine grid columns based on width
-  const getGridColumns = () => {
-    if (sidebarWidth < 10) return 0; // No models visible in detail view
-    if (sidebarWidth < 25) return 1; // One model column in composition view
-    if (sidebarWidth < 40) return 2;
-    if (sidebarWidth < 60) return 3;
-    return 4;
-  };
-  
-  // Get CSS grid template columns for proper sizing
+  // Grid layout configuration
   const getGridStyle = () => {
-    const cols = getGridColumns();
+    if (!shouldShowModels) return {};
+    
     return {
       display: 'grid',
-      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-      gap: '1rem',
+      // Reduce from 3 to 2 columns to give more horizontal space
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: '1.5rem',
     };
   };
   
-  // Get the appropriate grid class based on column count
-  const getGridClass = () => {
-    return 'auto-rows-max';
-  };
+  // Grid class for auto row sizing
+  const getGridClass = () => 'auto-rows-max';
   
   // Handler to open modal with a specific model
   const handleExpandModel = (model, title) => {
@@ -1026,12 +1192,21 @@ const UnifiedInterface = () => {
     setMergeModalOpen(true);
   };
   
+  // Handler to directly import a model into the workspace
+  const handleImportModel = (e, model, title) => {
+    e.stopPropagation(); // Prevent triggering the parent onClick
+    setSelectedModel(getModelNames().find(key => jsonModels[key] === model));
+    // Add a small delay to allow state to update and trigger re-render
+    setTimeout(() => {
+      console.log(`Imported model: ${title}`);
+    }, 100);
+  };
+  
   // Handler for canceling the merge operation
   const handleCancelMerge = () => {
     // Abort any in-progress API calls
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      abortControllerRef.current = null;
     }
     
     // Reset loading state and close modal
@@ -1041,8 +1216,6 @@ const UnifiedInterface = () => {
   
   // Handler for submitting feedback and merging the model
   const handleMergeSubmit = async (feedback) => {
-    console.log('User feedback:', feedback);
-    
     // Show loading state
     setLoadingResponse(true);
     
@@ -1094,8 +1267,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         const jsonString = jsonMatch[1].trim();
         mergedModel = JSON.parse(jsonString);
         
-        console.log('Successfully parsed merged model:', mergedModel);
-        
         // Create a new merged model name
         const baseModelName = `merged_${formatModelName(currentModelName).replace(/\s+/g, '_')}_${mergeModelTitle.replace(/\s+/g, '_')}`;
         
@@ -1112,8 +1283,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         setMergeModalOpen(false);
         setShowResponseModal(true);
       } catch (jsonError) {
-        console.error('Error parsing JSON response:', jsonError);
-        
         // If we can't parse the JSON, just show the text response
         setClaudeResponse(`Claude provided a response but it couldn't be parsed as a valid model. Here's what Claude said: ${claudeResponse}`);
         
@@ -1125,8 +1294,6 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         setSelectedModel(modelToMergeName);
       }
     } catch (error) {
-      console.error('Error getting response from Claude:', error);
-      
       // Don't show error if the request was cancelled
       if (error.message !== 'Request cancelled') {
         setClaudeResponse('Sorry, there was an error getting a response from Claude.');
@@ -1180,65 +1347,24 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
   
   // Sidebar component for model selection with Mermaid visualizations
   const ModelSidebar = () => {
-    // Add searchTerm state here
     const [searchTerm, setSearchTerm] = useState('');
-    // Add ref to maintain focus
-    const searchInputRef = useRef(null);
     
-    // Memoize filtered models calculation
-    const filteredModels = useMemo(() => {
-      return getModelNames().filter(filename => {
-        const displayName = formatModelName(filename).toLowerCase();
-        const description = getModelDescription(filename).toLowerCase();
-        const search = searchTerm.toLowerCase();
-        
-        return displayName.includes(search) || description.includes(search);
-      });
-    }, [searchTerm]); // Only recalculate when searchTerm changes
-    
-    // Add effect to maintain focus after render
-    useEffect(() => {
-      // If we have a ref to the search input and it should have focus
-      if (searchInputRef.current && document.activeElement === searchInputRef.current) {
-        // Keep the focus and cursor position
-        const cursorPosition = searchInputRef.current.selectionStart;
-        searchInputRef.current.focus();
-        searchInputRef.current.setSelectionRange(cursorPosition, cursorPosition);
-      }
-    });
-    
-    // Determine if sidebar content should be shown based on view mode
-    const showSidebarContent = getGridColumns() > 0;
+    // Filter models based on search term
+    const filteredModels = getModelNames().filter(name => 
+      formatModelName(name).toLowerCase().includes(searchTerm.toLowerCase())
+    );
     
     return (
       <div className="bg-white rounded-lg shadow-md p-4 h-full flex flex-col overflow-hidden">
-        {/* Header with title and expand/collapse indicator */}
+        {/* Header with title */}
         <div className="flex justify-between items-center mb-4">
-        <button 
-          onClick={() => setLibraryOpen(true)}
-          className="text-lg font-semibold text-gray-700 hover:text-blue-600 focus:outline-none text-left"
-        >
-          Available Models
-        </button>
-          
-          <button
-            onClick={() => {
-              const nextMode = viewMode === 'detail' ? 'composition' 
-                : viewMode === 'composition' ? 'overview' 
-                : 'detail';
-              handleViewModeChange(nextMode);
-            }}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-            title="Toggle view"
-          >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={viewMode === 'overview' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
-            </svg>
-          </button>
+          <h2 className="text-lg font-semibold text-gray-700">
+            Available Models
+          </h2>
         </div>
         
-        {/* Search Bar - only show if models are visible */}
-        {showSidebarContent && (
+        {/* Search Bar */}
+        {shouldShowModels && (
           <div className="mb-4">
             <div className="relative">
               <input
@@ -1258,14 +1384,14 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         )}
         
         <div className="flex-1 overflow-y-auto pr-2">
-          {!showSidebarContent ? (
+          {!shouldShowModels ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Models are hidden in detail view</p>
+              <p className="text-gray-500">Models are hidden in focus view</p>
               <button 
-                onClick={() => handleViewModeChange('composition')}
+                onClick={() => handleViewModeChange('explore')}
                 className="mt-4 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Switch to Composition View
+                Switch to Explore View
               </button>
             </div>
           ) : filteredModels.length > 0 ? (
@@ -1286,28 +1412,42 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
                     isSelected 
                       ? 'ring-2 ring-blue-500' 
                       : 'hover:bg-blue-50'
-                    } h-full flex flex-col`}
+                    } h-full flex flex-col overflow-hidden`}
                 >
-                  <div className="p-3 border-b border-gray-200">
+                  <div className="p-4 border-b border-gray-200">
                       <p className="font-medium text-gray-900 truncate">{displayName}</p>
-                      {getGridColumns() === 1 && (
-                        <>
-                    <p className="text-sm text-gray-600 mt-1">{description}</p>
-                    <button
-                      onClick={(e) => handleMergeModel(e, model, displayName)}
-                      className="mt-2 px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                    >
-                      Merge With Current
-                    </button>
-                        </>
-                      )}
+                      <p className="text-sm text-gray-600 mt-1">{description}</p>
+                      <div className="flex space-x-2 mt-2">
+                        <button
+                          onClick={(e) => handleImportModel(e, model, displayName)}
+                          className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        >
+                          Import
+                        </button>
+                        <button
+                          onClick={(e) => handleMergeModel(e, model, displayName)}
+                          className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        >
+                          Steal
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Call translate function when implemented
+                            console.log("Translate clicked for", displayName);
+                          }}
+                          className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                          Translate
+                        </button>
+                      </div>
                   </div>
-                    <div className="flex-1 min-h-0">
-                  <MermaidPreview 
-                    model={model} 
-                    isSelected={isSelected}
-                  />
-                    </div>
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <MermaidPreview 
+                      model={model} 
+                      isSelected={isSelected}
+                    />
+                  </div>
                 </div>
               );
               })}
@@ -1327,13 +1467,13 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
     // Logic for creating a new model would go here
     // For now, just navigate to the main interface
     setShowLanding(false);
-    handleViewModeChange('detail');
+    handleViewModeChange('focus'); // Changed from 'detail'
   };
 
   const handleBrowseModels = () => {
-    // Navigate to the main interface and set to overview view
+    // Navigate to the main interface and set to explore view
     setShowLanding(false);
-    handleViewModeChange('overview');
+    handleViewModeChange('explore'); // Changed from 'overview'
   };
 
   // If showing landing page, render it instead of the main interface
@@ -1343,7 +1483,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       onBrowseModels={handleBrowseModels} 
       onSkip={() => {
         setShowLanding(false);
-        handleViewModeChange('composition');
+        handleViewModeChange('integrate'); // Changed from 'composition'
       }}
     />;
   }
@@ -1351,143 +1491,121 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Live World Models</h1>
+      <header className="bg-white shadow-sm px-6 py-3 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Causal Modelling of Systems</h1>
+          <p className="text-sm text-gray-500">Visualize and analyze complex system dynamics</p>
+        </div>
         
-        {/* Home button to return to landing page - Moved to center */}
-        <button
-          onClick={() => setShowLanding(true)}
-          className="px-4 py-2 text-sm bg-gray-50 text-purple-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2 flex items-center border border-gray-200"
-        >
-          <svg className="w-8 h-8 mr-0" fill="none" viewBox="0 0 48 40" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M 7 19 C 11 21 13 15 17 21 C 21 15 23 21 27 19 M 27 9 C 25 13 21 11 17 17 M 23 17 C 25 15 25 17 27 15 M 17 29 v 2 L 15 29 C 17 25 15 13 17 7 C 19 13 17 25 19 29 L 17 31 M 7 9 C 9 13 13 11 17 17 M 11 17 C 9 15 9 17 7 15 M 27 9 C 25 13 21 11 17 17 M 23 7 C 21 9 23 9 21 11 M 11 7 C 13 9 11 9 13 11" />
-          </svg>
-          <span className="text-base font-medium">Model Origins</span>
-        </button>
-
-        {/* View mode selector - Moved to right */}
-        <div className="w-1/4 flex flex-col items-center">
-          <div className="flex justify-between w-full mb-1">
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'detail' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Detail View</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'composition' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Composition</span>
-            <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'overview' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Overview</span>
-          </div>
-          <div className="relative w-full h-8">
-            {/* Background track */}
-            <div 
-              className="absolute left-0 right-0 top-1/2 h-1 -mt-0.5 rounded-full"
-              style={{
-                background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899)'
-              }}
-            ></div>
-            
-            {/* Slider track indicator - snaps to one of three positions */}
-            <div 
-              className="absolute left-0 top-1/2 h-3 -mt-1.5 bg-white rounded-full shadow border border-gray-200 transition-all duration-300"
-              style={{
-                left: viewMode === 'detail' ? '0%' : viewMode === 'composition' ? '50%' : '100%',
-                transform: 'translateX(-50%)',
-                width: '12px'
-              }}
-            ></div>
-            
-            {/* Mode selection buttons */}
-            <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'detail' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('detail')}
-              >
-                {viewMode === 'detail' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'composition' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('composition')}
-              >
-                {viewMode === 'composition' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-              <button 
-                className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
-                  ${viewMode === 'overview' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
-                onClick={() => handleViewModeChange('overview')}
-              >
-                {viewMode === 'overview' && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
+        {/* View mode selector - centered */}
+        <div className="flex-1 flex justify-center">
+          <div className="w-64 flex flex-col items-center">
+            <div className="flex justify-between w-full mb-1">
+              <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'focus' ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>Focus</span>
+              <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'integrate' ? 'text-purple-600 font-semibold' : 'text-gray-500'}`}>Integrate</span>
+              <span className={`text-xs font-medium transition-colors duration-200 ${viewMode === 'explore' ? 'text-pink-600 font-semibold' : 'text-gray-500'}`}>Explore</span>
+            </div>
+            <div className="relative w-full h-8">
+              {/* Background track */}
+              <div 
+                className="absolute left-0 right-0 top-1/2 h-1 -mt-0.5 rounded-full"
+                style={{
+                  background: 'linear-gradient(to right, #3b82f6, #8b5cf6, #ec4899)'
+                }}
+              ></div>
+              
+              {/* Slider track indicator - snaps to one of three positions */}
+              <div 
+                className="absolute left-0 top-1/2 h-3 -mt-1.5 bg-white rounded-full shadow border border-gray-200 transition-all duration-300"
+                style={{
+                  left: viewMode === 'focus' ? '0%' : viewMode === 'integrate' ? '50%' : '100%',
+                  transform: 'translateX(-50%)',
+                  width: '12px'
+                }}
+              ></div>
+              
+              {/* Mode selection buttons */}
+              <div className="flex justify-between w-full absolute top-1/2 -mt-3 z-0">
+                <button 
+                  className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                    ${viewMode === 'focus' ? 'bg-blue-500 ring-4 ring-blue-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  onClick={() => handleViewModeChange('focus')}
+                >
+                  {viewMode === 'focus' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                </button>
+                <button 
+                  className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                    ${viewMode === 'integrate' ? 'bg-purple-500 ring-4 ring-purple-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  onClick={() => handleViewModeChange('integrate')}
+                >
+                  {viewMode === 'integrate' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                </button>
+                <button 
+                  className={`w-6 h-6 rounded-full shadow transition-all duration-300 flex items-center justify-center 
+                    ${viewMode === 'explore' ? 'bg-pink-500 ring-4 ring-pink-200 scale-110' : 'bg-white border border-gray-300'}`}
+                  onClick={() => handleViewModeChange('explore')}
+                >
+                  {viewMode === 'explore' && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        
+        {/* Help button */}
+        <button
+          onClick={() => setShowHelpModal(true)}
+          className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center hover:from-blue-600 hover:to-purple-600 shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          aria-label="Help"
+        >
+          <span className="text-xl font-semibold">?</span>
+        </button>
       </header>
       
       {/* Main content with sidebar layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar with modification threads (visible in detail and composition views) */}
-        {isModificationThreadsVisible && (
+        {/* Left sidebar with modification threads (visible only in integrate view and should be on left for other views) */}
+        {isModificationThreadsVisible && viewMode !== 'integrate' && (
           <aside className="w-72 transition-all duration-300 ease-in-out">
-            <ModificationThreads />
+            <ModificationThreads 
+              model={currentLoopyModel} 
+              forceRefresh={false}
+            />
           </aside>
         )}
         
         {/* Main visualization area with Loopy or placeholder */}
         <main 
           className="transition-all duration-300 ease-in-out overflow-auto p-6 flex-1"
-          style={{ width: isModificationThreadsVisible ? `calc(100% - ${sidebarWidth}% - 56px)` : `calc(100% - ${sidebarWidth}%)` }}
+          style={{ width: isModificationThreadsVisible ? `calc(100% - ${layoutConfig.sidebarWidth}% - 18rem)` : `calc(100% - ${layoutConfig.sidebarWidth}%)` }}
         >
           <div className="bg-white rounded-lg shadow-md p-6 h-full relative">
             {isLoopyVisible ? (
               <>
                 <LoopyVisualizer 
-                  model={selectedModel ? jsonModels[selectedModel] : null} 
-                  title="Loopy Interactive Model" 
+                  ref={loopyVisualizerRef}
+                  model={jsonModels[selectedModel]} 
+                  title="Workspace" 
+                  onModelChange={handleLoopyModelChange}
                 />
               </>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center">
-                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-700 mb-2">Experimental Viewbox</h3>
-                <p className="text-gray-500 max-w-xs">
-                  The library overview mode provides a comprehensive view of available models.
-                </p>
-                <div className="mt-6 border border-gray-200 rounded-lg p-4 w-full max-w-md">
-                  <p className="italic text-center text-gray-600">
-                    &lt;EXPERIMENTAL AREA FOR MODEL COMPARISONS&gt;
-                  </p>
-                </div>
-                <button 
-                  onClick={() => handleViewModeChange('detail')}
-                  className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Return to Detail View
-                </button>
-              </div>
-            )}
+            ) : null}
           </div>
         </main>
         
-        {/* Resize handle */}
-        <div 
-          className={`flex flex-col items-center justify-center py-6 cursor-col-resize hover:bg-blue-100 active:bg-blue-200 z-10 ${isDragging ? 'bg-blue-100' : 'bg-gray-50'}`}
-          onMouseDown={handleMouseDown}
-          style={{ width: '12px' }}
-        >
-          <div className="flex flex-col items-center space-y-1 opacity-50">
-            <div className="w-1 h-8 bg-gray-400 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-          </div>
-        </div>
-        
-        {/* Right sidebar with model selection and Mermaid previews */}
+        {/* Right sidebar for model selection (in explore view) or modification threads (in integrate view) */}
         <aside 
-          className="border-l border-gray-200 p-4 overflow-y-auto transition-all duration-500 ease-in-out"
-          style={{ width: `${sidebarWidth}%` }}
+          className={`${viewMode === 'integrate' ? 'w-96' : ''} border-l border-gray-200 p-4 overflow-y-auto transition-all duration-500 ease-in-out`}
+          style={viewMode !== 'integrate' ? { width: `${layoutConfig.sidebarWidth}%` } : {}}
         >
-          <ModelSidebar />
+          {viewMode === 'integrate' && isModificationThreadsVisible ? (
+            <ModificationThreads 
+              model={currentLoopyModel}
+              forceRefresh={threadRefreshTrigger}
+            />
+          ) : (
+            <ModelSidebar />
+          )}
         </aside>
       </div>
       
@@ -1518,19 +1636,10 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
         isLoading={loadingResponse}
       />
       
-      {/* Model library overlay component */}
-      <ModelLibraryOverlay
-        isOpen={libraryOpen}
-        onClose={() => setLibraryOpen(false)}
-        models={getModelNames().map(name => ({
-          id: name,
-          name: formatModelName(name),
-          model: jsonModels[name]
-        }))}
-        onSelectModel={(id) => {
-          setSelectedModel(id);
-          setLibraryOpen(false);
-        }}
+      {/* Help modal */}
+      <HelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
       />
     </div>
   );

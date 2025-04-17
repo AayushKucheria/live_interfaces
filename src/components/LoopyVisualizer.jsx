@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { modelToLoopy, sendModelToLoopy } from '../utils/loopyUtils';
 import { addModelToLibrary } from '../utils/jsonModelLoader';
 
@@ -7,8 +7,9 @@ import { addModelToLibrary } from '../utils/jsonModelLoader';
  * @param {Object} props Component props
  * @param {Object} props.model Optional model data that could be converted to Loopy format
  * @param {string} props.title Optional title for the visualization
+ * @param {Function} props.onModelChange Optional callback that fires when the model changes
  */
-const LoopyVisualizer = ({ model, title }) => {
+const LoopyVisualizer = forwardRef(({ model, title, onModelChange }, ref) => {
   const iframeRef = useRef(null);
   const [isLoopyReady, setIsLoopyReady] = useState(false);
   const [modelSent, setModelSent] = useState(false);
@@ -16,6 +17,34 @@ const LoopyVisualizer = ({ model, title }) => {
   const [modelName, setModelName] = useState('');
   const [shareSuccess, setShareSuccess] = useState(false);
   const [currentCatColabModel, setCurrentCatColabModel] = useState(null);
+  
+  // Expose methods to the parent component through ref
+  useImperativeHandle(ref, () => ({
+    // Method to update the model directly
+    updateModel: (newModel) => {
+      if (!iframeRef.current || !iframeRef.current.contentWindow) {
+        console.error('Cannot update model - iframe reference is not available');
+        return false;
+      }
+      
+      try {
+        // If it's already in Loopy format, send it directly
+        if (newModel.nodes && Array.isArray(newModel.nodes)) {
+          return sendModelToLoopy(newModel, iframeRef.current);
+        }
+        
+        // Otherwise convert it to Loopy format first
+        const loopyModel = modelToLoopy(newModel);
+        return sendModelToLoopy(loopyModel, iframeRef.current);
+      } catch (error) {
+        console.error('Error updating model:', error);
+        return false;
+      }
+    },
+    
+    // Method to get the current iframe reference
+    getIframeRef: () => iframeRef.current
+  }));
   
   // Setup message listener to communicate with Loopy iframe
   useEffect(() => {
@@ -38,11 +67,16 @@ const LoopyVisualizer = ({ model, title }) => {
           // Store the model data for sharing
           setCurrentCatColabModel(catColabData);
           
+          // If we have an onModelChange callback, call it with the updated model
+          if (onModelChange && typeof onModelChange === 'function') {
+            onModelChange(catColabData);
+          }
+          
           // If this was triggered by the Share button, show modal
           if (event.data.shareRequested) {
             setShowShareModal(true);
-          } else {
-            // Else trigger a download as before
+          } else if (!event.data.silent) {
+            // Only trigger download if not silent mode
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(catColabData, null, 2));
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
@@ -56,11 +90,24 @@ const LoopyVisualizer = ({ model, title }) => {
           console.error('Error processing CatColab export data in main listener:', error);
         }
       }
+      
+      // Handle model update notifications from Loopy
+      if (event.data && event.data.action === 'modelUpdated') {
+        // Request the current model to trigger the exportCatColab handler
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+          setTimeout(() => {
+            iframeRef.current.contentWindow.postMessage({
+              action: 'requestExportCatColab',
+              silent: true // Don't trigger download
+            }, '*');
+          }, 200); // Small delay to ensure Loopy has completed the update
+        }
+      }
     };
     
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [onModelChange]);
 
   // If we have a model and Loopy is ready, convert it to Loopy format and send it
   useEffect(() => {
@@ -80,7 +127,7 @@ const LoopyVisualizer = ({ model, title }) => {
   useEffect(() => {
     setModelSent(false);
   }, [model]);
-
+  
   // Function to handle exporting current Loopy model to CatColab format
   const handleExportToCatColab = () => {
     if (!iframeRef.current || !iframeRef.current.contentWindow) {
@@ -227,6 +274,6 @@ const LoopyVisualizer = ({ model, title }) => {
       )}
     </div>
   );
-};
+});
 
 export default LoopyVisualizer; 
