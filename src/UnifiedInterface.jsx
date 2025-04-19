@@ -5,6 +5,8 @@ import { modelToMermaid, parseModelData } from './utils/mermaidUtils';
 import { jsonModels, formatModelName, getModelNames, addModelToLibrary } from './utils/jsonModelLoader';
 import { sendMessageToClaude } from './services/openRouterService';
 import { generateThreadSuggestions } from './services/aiThreadService';
+import { threadCompositionSystemPrompt } from './utils/prompts';
+import { structuralCompositionSystemPrompt } from './utils/prompts';
 
 // Landing Page component
 const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
@@ -730,7 +732,7 @@ const ModificationThreads = ({ model, forceRefresh }) => {
     setIsLoading(true);
     
     // Send to Claude
-    sendMessageToClaude(userMessage, systemPrompt)
+    sendMessageToClaude(userMessage, threadCompositionSystemPrompt)
       .then(response => {
         try {
           // Extract JSON from the response
@@ -1199,6 +1201,7 @@ const UnifiedInterface = () => {
     // Add a small delay to allow state to update and trigger re-render
     setTimeout(() => {
       console.log(`Imported model: ${title}`);
+      setCurrentLoopyModel(model);
     }, 100);
   };
   
@@ -1250,7 +1253,7 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
       // Call Claude through OpenRouter with the system prompt and abort controller
       const claudeResponse = await sendMessageToClaude(
         userMessage, 
-        systemPrompt, 
+        structuralCompositionSystemPrompt, 
         'anthropic/claude-3-sonnet:20240229',
         abortControllerRef.current
       );
