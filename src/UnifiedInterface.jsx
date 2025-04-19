@@ -7,6 +7,7 @@ import { sendMessageToClaude } from './services/openRouterService';
 import { generateThreadSuggestions } from './services/aiThreadService';
 import { threadCompositionSystemPrompt } from './utils/prompts';
 import { structuralCompositionSystemPrompt } from './utils/prompts';
+import { modelToLoopy } from './utils/loopyUtils';
 
 // Landing Page component
 const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
@@ -672,7 +673,8 @@ const ModificationThreads = ({ model, forceRefresh }) => {
   const handleDetailedSuggestionClick = (suggestion) => {
     // Log the selected suggestion
     console.log(`Implementing suggestion: ${suggestion.title}`);
-    
+    model = modelToLoopy(model);
+
     // If there's no model, we can't do anything
     if (!model || !model.nodes) {
       console.error('Cannot implement suggestion - no valid model available');
