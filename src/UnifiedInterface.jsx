@@ -215,9 +215,9 @@ const ModificationThreads = ({ model, forceRefresh }) => {
   
   // State for AI-generated threads
   const [threadOptions, setThreadOptions] = useState([
-    { id: 'add_variable', label: 'Add another variable', description: 'Pull this thread to introduce a new factor to the system' },
-    { id: 'increase_nuance', label: 'Increase nuance', description: 'Unravel this thread to add more detail to existing relationships' },
-    { id: 'simplify', label: 'Simplify', description: 'Follow this thread to reduce complexity while preserving key dynamics' },
+    { id: 'add_variable', label: 'Add another variable' },
+    { id: 'increase_nuance', label: 'Increase nuance' },
+    { id: 'simplify', label: 'Simplify' },
   ]);
   
   // State for AI-generated detailed suggestions
@@ -299,8 +299,7 @@ const ModificationThreads = ({ model, forceRefresh }) => {
         // Update thread options
         setThreadOptions(suggestions.threads.map(thread => ({
           id: thread.id,
-          label: thread.label,
-          description: thread.description
+          label: thread.label
         })));
         
         // Update detailed suggestions
@@ -582,9 +581,6 @@ const ModificationThreads = ({ model, forceRefresh }) => {
                   </svg>
                   <span className="font-medium text-gray-800">{option.label} {option.id !== 'explore_more' ? '→' : ''}</span>
                 </div>
-                {isSelected && !showDetailView && (
-                  <p className="mt-2 text-sm text-gray-600">{option.description}</p>
-                )}
               </div>
             );
           })}
