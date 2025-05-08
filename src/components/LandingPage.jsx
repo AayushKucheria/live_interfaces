@@ -15,7 +15,23 @@ const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
   
   // State for the "Models... of what?" button and its children
   const [showChildButtons, setShowChildButtons] = useState(false);
-  const [selectedChildButtons, setSelectedChildButtons] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  
+  // Template texts for each category
+  const categoryTemplates = {
+    environment: "Create a causal loop diagram showing the relationships between climate change, biodiversity loss, and ecosystem resilience. Include feedback loops related to carbon emissions, temperature rise, and habitat disruption.",
+    technology: "Design a system model exploring how artificial intelligence adoption impacts labor markets, productivity, and innovation. Consider feedback loops between technological development, skill acquisition, and economic growth.",
+    culture: "Model the interconnections between social media, cultural polarization, and information spread. Include variables for trust, social cohesion, and belief formation with appropriate feedback mechanisms.",
+    geopolitics: "Develop a causal model of resource competition, international cooperation, and conflict. Include feedback loops related to scarcity, alliance formation, and economic interdependence.",
+    relationships: "Create a system diagram exploring interpersonal dynamics, trust building, and conflict resolution. Model feedback loops related to communication patterns, emotional responses, and behavior reinforcement."
+  };
+  
+  // Update input text when category changes
+  useEffect(() => {
+    if (selectedCategory) {
+      setInputValue(categoryTemplates[selectedCategory] || '');
+    }
+  }, [selectedCategory]);
   
   // Function to handle icon click
   const handleIconClick = (e) => {
@@ -97,10 +113,7 @@ const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
 
   // Function to handle child button click
   const handleChildButtonClick = (id) => {
-    setSelectedChildButtons(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+    setSelectedCategory(currentSelected => currentSelected === id ? null : id);
   };
   
   // Cleanup timeouts/intervals on unmount
@@ -116,14 +129,6 @@ const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
       {/* Header */}
       <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Live World Models</h1>
-        <button
-          onClick={onSkip}
-          className="text-gray-500 hover:text-gray-700 focus:outline-none"
-        >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </header>
       
       {/* Main content */}
@@ -191,7 +196,7 @@ const LandingPage = ({ onCreateNew, onBrowseModels, onSkip }) => {
                         key={id}
                         onClick={() => handleChildButtonClick(id)}
                         className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
-                          selectedChildButtons[id]
+                          selectedCategory === id
                           ? 'bg-indigo-600 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
