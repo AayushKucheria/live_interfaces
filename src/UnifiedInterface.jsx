@@ -1222,14 +1222,28 @@ Please merge these models and return ONLY the valid JSON of the merged model.`;
           </div>
         </div>
         
-        {/* Help button */}
-        <button
-          onClick={() => setShowHelpModal(true)}
-          className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center hover:from-blue-600 hover:to-purple-600 shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          aria-label="Help"
-        >
-          <span className="text-xl font-semibold">?</span>
-        </button>
+        {/* Header buttons */}
+        <div className="flex items-center space-x-2">
+          {/* Home button to return to landing page */}
+          <button
+            onClick={() => setShowLanding(true)}
+            className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center justify-center hover:from-purple-600 hover:to-pink-600 shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            aria-label="Return to landing page"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </button>
+          
+          {/* Help button */}
+          <button
+            onClick={() => setShowHelpModal(true)}
+            className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center hover:from-blue-600 hover:to-purple-600 shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            aria-label="Help"
+          >
+            <span className="text-xl font-semibold">?</span>
+          </button>
+        </div>
       </header>
       
       {/* Main content with sidebar layout */}
