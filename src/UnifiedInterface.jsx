@@ -3,10 +3,9 @@ import LoopyVisualizer from './components/LoopyVisualizer';
 import MermaidDiagram from './components/MermaidDiagram';
 import { modelToMermaid, parseModelData } from './utils/mermaidUtils';
 import { jsonModels, formatModelName, getModelNames, addModelToLibrary } from './utils/jsonModelLoader';
-import { sendMessageToClaude } from './services/openRouterService';
 import { generateThreadSuggestions } from './services/aiThreadService';
-import { threadCompositionSystemPrompt } from './utils/prompts';
-import { structuralCompositionSystemPrompt } from './utils/prompts';
+import { prepareModelMerge } from './services/modelTransformationService';
+import { implementDetailedSuggestion, handleModelMergeWorkflow } from './services/aiModelService';
 import { modelToLoopy } from './utils/loopyUtils';
 import LandingPage from './components/LandingPage';
 
@@ -335,126 +334,20 @@ const ModificationThreads = ({ model, forceRefresh }) => {
   };
 
   const handleDetailedSuggestionClick = (suggestion) => {
-    // Log the selected suggestion
-    console.log(`Implementing suggestion: ${suggestion.title}`);
     model = modelToLoopy(model);
-
-    // If there's no model, we can't do anything
-    if (!model || !model.nodes) {
-      console.error('Cannot implement suggestion - no valid model available');
-      return;
-    }
     
-    // Prepare a system prompt for Claude to implement the suggestion
-    const systemPrompt = `
-    You are an AI assistant specialized in causal modeling.
-    Your task is to implement a specific modification to a causal model.
-    
-    The current model will be provided in a simplified JSON format.
-    
-    Return ONLY the modified model as a valid JSON object with the following structure:
-    {
-      "nodes": [
-        { "id": "node_id", "name": "Node Name" },
-        // more nodes...
-      ],
-      "edges": [
-        { "from": "source_node_id", "to": "target_node_id", "type": "positive|negative" },
-        // more edges...
-      ],
-      "theory": "causal-loop",
-      "type": "model"
-    }
-    
-    Do not include any explanation or additional text, only return valid JSON.
-    Ensure all node IDs are unique and edges reference valid node IDs.
-    Make minimal changes to implement the requested modification.
-    `;
-    
-    // Prepare the model in a simplified format for Claude
-    const simplifiedModel = {
-      nodes: model.nodes.map(n => ({ id: n.id.toString(), name: n.name })),
-      edges: (model.edges || []).map(e => ({ 
-        from: e.from.toString(), 
-        to: e.to.toString(), 
-        type: e.strength < 0 ? 'negative' : 'positive' 
-      })),
-      theory: model.theory || 'causal-loop',
-      type: 'model'
-    };
-    
-    // Prepare user message with the model and the suggestion
-    const userMessage = `
-    Here is the current causal model:
-    ${JSON.stringify(simplifiedModel, null, 2)}
-    
-    Implement this modification: "${suggestion.title}"
-    Description: ${suggestion.description}
-    
-    Return the modified model.
-    `;
-    
-    // Show loading state
-    setIsLoading(true);
-    
-    // Send to Claude
-    sendMessageToClaude(userMessage, threadCompositionSystemPrompt)
-      .then(response => {
-        try {
-          // Extract JSON from the response
-          const jsonMatch = response.match(/\{[\s\S]*\}/);
-          let modifiedModel;
-          
-          if (jsonMatch) {
-            modifiedModel = JSON.parse(jsonMatch[0]);
-          } else {
-            // If no JSON pattern found, try parsing directly
-            modifiedModel = JSON.parse(response);
-          }
-          
-          // Clear the detail view and selection after implementation
-          setShowDetailView(false);
-          setSelectedOption(null);
-          
-          // Convert to Loopy format for direct update
-          // This simplified version doesn't rely on global event
-          const loopyFormat = {
-            nodes: modifiedModel.nodes.map((node, index) => ({
-              id: parseInt(node.id) || index,
-              name: node.name || `Node ${index + 1}`,
-              x: Math.random() * 800 + 100, // Random position
-              y: Math.random() * 400 + 50,  // Random position
-              hue: index % 6  // Color based on index
-            })),
-            edges: modifiedModel.edges.map((edge, index) => ({
-              id: index,
-              from: parseInt(edge.from) || 0,
-              to: parseInt(edge.to) || 0,
-              strength: edge.type === 'negative' ? -1 : 1,
-              arc: 0
-            })),
-            labels: []
-          };
-          
-          // Find the Loopy visualizer reference in the parent UnifiedInterface
-          // and update the model directly
-          if (window.loopyVisualizerRef && window.loopyVisualizerRef.current) {
-            window.loopyVisualizerRef.current.updateModel(loopyFormat);
-            console.log('Updated Loopy model via global ref');
-          } else {
-            console.error('Could not find global loopyVisualizerRef');
-          }
-          
-        } catch (error) {
-          console.error('Error parsing modified model:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      })
-      .catch(error => {
-        console.error('Error implementing suggestion:', error);
-        setIsLoading(false);
-      });
+    // Use the aiModelService to implement the suggestion
+    implementDetailedSuggestion(
+      model,
+      suggestion,
+      window.loopyVisualizerRef,
+      () => {
+        // On success callback
+        setShowDetailView(false);
+        setSelectedOption(null);
+      },
+      setIsLoading
+    );
   };
 
   const handleBackClick = () => {
@@ -851,10 +744,7 @@ const UnifiedInterface = () => {
   
   // Handler to open merge modal for merging a model
   const handleMergeModel = (e, model, title) => {
-    e.stopPropagation(); // Prevent triggering the parent onClick
-    setModelToMerge(model);
-    setMergeModelTitle(title);
-    setMergeModalOpen(true);
+    prepareModelMerge(e, model, title, setModelToMerge, setMergeModelTitle, setMergeModalOpen);
   };
   
   // Handler to directly import a model into the workspace
@@ -881,105 +771,19 @@ const UnifiedInterface = () => {
   };
   
   // Handler for submitting feedback and merging the model
-  const handleMergeSubmit = async (feedback) => {
-    // Show loading state
-    setLoadingResponse(true);
-    
-    // Create a new AbortController
-    abortControllerRef.current = new AbortController();
-    
-    try {
-      // Get the current selected model
-      const currentModelName = selectedModel;
-      const currentModel = jsonModels[currentModelName];
-      const modelToMergeName = getModelNames().find(key => jsonModels[key] === modelToMerge);
-      
-      // Create system prompt for model merging
-      const systemPrompt = `You will act as an AI specialized in merging multiple JSON representations of causal loop diagrams (CLDs) while preserving their underlying mathematical and structural integrity. I will provide you with an array of JSON models. Each model represents a causal loop diagram that includes formal declarations (objects and morphisms) as well as metadata and rich-text cells. Your task is to merge all these models into a single cohesive model.
-
-Please adhere to the following guidelines:
-
-Structural Preservation: Retain all crucial structural information and metadata from each input model. Ensure that every cell (whether rich-text, formal, or stem) is preserved.
-Conflict Resolution: When overlapping or similar objects are found, merge them using a weighted approach that respects all sources.
-Applied Category Theory: Employ concepts from applied category theory—specifically functors and pushouts—to guide the merging process.
-Language Consistency: Preserve the original language, naming conventions, and metadata from all parent models.
-Output Format: Output ONLY the final merged model as valid JSON with no additional explanations or text.`;
-      
-      // User message with the models and context
-      const userMessage = `Here are two causal loop diagram models to merge. The first model is called "${formatModelName(currentModelName)}" and the second is "${mergeModelTitle}". User feedback about the second model: "${feedback}".
-
-Model 1: ${JSON.stringify(currentModel)}
-Model 2: ${JSON.stringify(modelToMerge)}
-
-Please merge these models and return ONLY the valid JSON of the merged model.`;
-      
-      // Call Claude through OpenRouter with the system prompt and abort controller
-      const claudeResponse = await sendMessageToClaude(
-        userMessage, 
-        structuralCompositionSystemPrompt, 
-        'anthropic/claude-3-sonnet:20240229',
-        abortControllerRef.current
-      );
-      
-      try {
-        // Try to parse the response as JSON
-        let mergedModel;
-        
-        // Extract JSON from response if it contains text
-        const jsonMatch = claudeResponse.match(/```(?:json)?([\s\S]*?)```/) || 
-                          claudeResponse.match(/({[\s\S]*})/) ||
-                          [null, claudeResponse];
-        
-        const jsonString = jsonMatch[1].trim();
-        mergedModel = JSON.parse(jsonString);
-        
-        // Create a new merged model name
-        const baseModelName = `merged_${formatModelName(currentModelName).replace(/\s+/g, '_')}_${mergeModelTitle.replace(/\s+/g, '_')}`;
-        
-        // Add the merged model to jsonModels using the utility function
-        const newModelName = addModelToLibrary(mergedModel, baseModelName);
-        
-        // Set response message
-        setClaudeResponse(`Created a merged model combining "${formatModelName(currentModelName)}" and "${mergeModelTitle}". This new model incorporates elements from both source models based on your feedback.`);
-        
-        // Update the selected model to the new merged one
-        setSelectedModel(newModelName);
-        
-        // Close merge modal and show response modal
-        setMergeModalOpen(false);
-        setShowResponseModal(true);
-      } catch (jsonError) {
-        // If we can't parse the JSON, just show the text response
-        setClaudeResponse(`Claude provided a response but it couldn't be parsed as a valid model. Here's what Claude said: ${claudeResponse}`);
-        
-        // Close merge modal and show response modal
-        setMergeModalOpen(false);
-        setShowResponseModal(true);
-        
-        // Just use the model that was selected to be merged
-        setSelectedModel(modelToMergeName);
-      }
-    } catch (error) {
-      // Don't show error if the request was cancelled
-      if (error.message !== 'Request cancelled') {
-        setClaudeResponse('Sorry, there was an error getting a response from Claude.');
-        
-        // Close merge modal and show response modal
-        setMergeModalOpen(false);
-        setShowResponseModal(true);
-        
-        // Fallback to just using the model that was selected to be merged
-        const modelToMergeName = getModelNames().find(key => jsonModels[key] === modelToMerge);
-        setSelectedModel(modelToMergeName);
-      } else {
-        // Just close the modal without showing an error
-        setMergeModalOpen(false);
-      }
-    } finally {
-      // Reset loading state and clear abort controller reference
-      setLoadingResponse(false);
-      abortControllerRef.current = null;
-    }
+  const handleMergeSubmit = (feedback) => {
+    handleModelMergeWorkflow(
+      feedback,
+      selectedModel,
+      modelToMerge,
+      mergeModelTitle,
+      abortControllerRef,
+      setLoadingResponse,
+      setClaudeResponse,
+      setSelectedModel,
+      setMergeModalOpen,
+      setShowResponseModal
+    );
   };
   
   // Get placeholder description for model
