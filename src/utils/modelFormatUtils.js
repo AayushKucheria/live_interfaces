@@ -1,23 +1,89 @@
 /**
  * Converts a Loopy model to a simplified format for Claude AI
- * @param {Object} model - The model in Loopy format
+ * @param {Object} model - The model in Loopy format or CatCoLab format
  * @returns {Object} - The simplified model
  */
 export const simplifyModelForAI = (model) => {
-  if (!model || !model.nodes) {
-    return { nodes: [], edges: [], theory: 'causal-loop', type: 'model' };
+  console.log('=== simplifyModelForAI INPUT ===');
+  console.log(JSON.stringify(model, null, 2));
+  
+  // Default empty result structure
+  const emptyResult = { nodes: [], edges: [] };
+  
+  // If model is null or undefined, return an empty structure
+  if (!model) {
+    console.log('=== simplifyModelForAI OUTPUT (empty) ===');
+    console.log(JSON.stringify(emptyResult, null, 2));
+    return emptyResult;
   }
   
-  return {
-    nodes: model.nodes.map(n => ({ id: n.id.toString(), name: n.name })),
-    edges: (model.edges || []).map(e => ({ 
-      from: e.from.toString(), 
-      to: e.to.toString(), 
-      type: e.strength < 0 ? 'negative' : 'positive' 
-    })),
-    theory: model.theory || 'causal-loop',
-    type: 'model'
-  };
+  let result = emptyResult;
+  
+  // Handle Loopy format
+  if (model.nodes && Array.isArray(model.nodes)) {
+    console.log('=== Processing Loopy format model ===');
+    
+    result = {
+      nodes: model.nodes.map(n => ({ id: n.id.toString(), name: n.name })),
+      edges: (model.edges || []).map(e => ({ 
+        from: e.from.toString(), 
+        to: e.to.toString(), 
+        type: e.strength < 0 ? 'negative' : 'positive' 
+      }))
+    };
+    
+    console.log('=== simplifyModelForAI OUTPUT (Loopy) ===');
+    console.log(JSON.stringify(result, null, 2));
+  }
+  // If it's a CatCoLab model format
+  else if (model.notebook && model.notebook.cells) {
+    console.log('=== Processing CatCoLab format model ===');
+    
+    const nodes = [];
+    const nodeIds = {};
+    
+    // First pass: collect all node names and IDs
+    model.notebook.cells.forEach(cell => {
+      if (cell.tag === 'formal' && cell.content && cell.content.tag === 'object') {
+        const nodeId = cell.content.id;
+        const nodeName = cell.content.name || `Node ${nodeId}`;
+        nodes.push({ id: nodeId.toString(), name: nodeName });
+        nodeIds[nodeId] = nodeName;
+      }
+    });
+    
+    // Second pass: collect all relationships
+    const edges = [];
+    model.notebook.cells.forEach(cell => {
+      if (cell.tag === 'formal' && cell.content && cell.content.tag === 'morphism') {
+        const type = 
+          cell.content.morType?.tag === 'Basic' && cell.content.morType.content === 'Negative' 
+            ? 'negative' 
+            : 'positive';
+        
+        const from = cell.content.dom?.content;
+        const to = cell.content.cod?.content;
+        
+        if (from && to && nodeIds[from] && nodeIds[to]) {
+          edges.push({
+            from: from.toString(),
+            to: to.toString(),
+            type
+          });
+        }
+      }
+    });
+    
+    result = { nodes, edges };
+    console.log('=== simplifyModelForAI OUTPUT (CatCoLab) ===');
+    console.log(JSON.stringify(result, null, 2));
+  }
+  else {
+    console.log('=== Unknown model format, returning empty result ===');
+    console.log(JSON.stringify(emptyResult, null, 2));
+  }
+  
+  return result;
 };
 
 /**
